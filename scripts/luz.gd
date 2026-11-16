@@ -16,15 +16,15 @@ const FORCA_SOMBRA := 0.32
 const TEMPO_TRANSICAO := 0.15
 
 var mapa: Dictionary = {}
-var _sombras: Dictionary = {}  # camaleão -> força atual da sombra (0 a 1)
-var _poeira: Array = []  # [posição, fase, velocidade] grãozinhos brilhando no sol
+var _sombras: Dictionary = {} # camaleão -> força atual da sombra (0 a 1)
+var _poeira: Array = [] # [posição, fase, velocidade] grãozinhos brilhando no sol
 var _tempo := 0.0
 var _camada_sol: Node2D
-var _estilos_sol: Array = []  # [Rect2, StyleBoxFlat] pré-alocados uma vez só
+var _estilos_sol: Array = [] # [Rect2, StyleBoxFlat] pré-alocados uma vez só
 
 
 func _ready() -> void:
-	z_index = -8  # por cima do chão e da água, por baixo dos camaleões
+	z_index = -8 # por cima do chão e da água, por baixo dos camaleões
 	_camada_sol = Node2D.new()
 	_camada_sol.draw.connect(_desenhar_sol)
 	add_child(_camada_sol)
@@ -41,13 +41,8 @@ func _ready() -> void:
 			estilo.anti_aliasing = true
 			_estilos_sol.append([forma, estilo])
 		for i in int(retangulo.get_area() / 7000.0) + 2:
-			_poeira.append(
-				[
-					Vector2(randf_range(retangulo.position.x, retangulo.end.x), randf_range(retangulo.position.y, retangulo.end.y)),
-					randf() * TAU,
-					randf_range(4.0, 10.0)
-				]
-			)
+			_poeira.append([Vector2(randf_range(retangulo.position.x, retangulo.end.x),
+				randf_range(retangulo.position.y, retangulo.end.y)), randf() * TAU, randf_range(4.0, 10.0)])
 	set_process(not mapa.get("luz", []).is_empty())
 
 

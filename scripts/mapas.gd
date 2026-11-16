@@ -36,19 +36,16 @@ const MAPAS := [
 	{
 		"nome": "Jardim",
 		"semente": 7,
-		"paredes":
-		[
+		"paredes": [
 			Rect2(475, 188, 75, 200),
 			Rect2(1050, 512, 75, 200),
 			Rect2(700, 138, 200, 50),
 			Rect2(700, 712, 200, 50),
 			# Mais cobertura: os outros dois pilares, um bloco no meio do sol
 			# e dois muros curtos saindo da cerca.
-			Rect2(1050, 188, 75, 200),
-			Rect2(475, 512, 75, 200),
+			Rect2(1050, 188, 75, 200), Rect2(475, 512, 75, 200),
 			Rect2(770, 420, 60, 60),
-			Rect2(1000, 20, 50, 130),
-			Rect2(550, 750, 50, 130),
+			Rect2(1000, 20, 50, 130), Rect2(550, 750, 50, 130),
 		],
 		"agua": [],
 		"pontes": [],
@@ -56,47 +53,29 @@ const MAPAS := [
 		"pocas": [Rect2(340, 680, 110, 70), Rect2(1150, 150, 110, 70)],
 		"luz": [Rect2(620, 320, 360, 260)],
 		"inicios": [Vector2(212, 262), Vector2(1388, 638), Vector2(1388, 262), Vector2(212, 638)],
-		"pontos_upgrade":
-		[
-			Vector2(250, 162),
-			Vector2(1350, 162),
-			Vector2(250, 738),
-			Vector2(1350, 738),
-			Vector2(800, 300),
-			Vector2(800, 600),
-			Vector2(625, 588),
-			Vector2(975, 312),
+		"pontos_upgrade": [
+			Vector2(250, 162), Vector2(1350, 162), Vector2(250, 738), Vector2(1350, 738),
+			Vector2(800, 300), Vector2(800, 600), Vector2(625, 588), Vector2(975, 312),
 		],
 	},
 	{
 		"nome": "Labirinto",
 		"semente": 21,
-		"paredes":
-		[
+		"paredes": [
 			# Muros saindo da cerca.
-			Rect2(330, 20, 50, 200),
-			Rect2(1220, 680, 50, 200),
-			Rect2(20, 425, 190, 50),
-			Rect2(1390, 425, 190, 50),
-			Rect2(330, 680, 50, 200),
-			Rect2(1220, 20, 50, 200),
+			Rect2(330, 20, 50, 200), Rect2(1220, 680, 50, 200),
+			Rect2(20, 425, 190, 50), Rect2(1390, 425, 190, 50),
+			Rect2(330, 680, 50, 200), Rect2(1220, 20, 50, 200),
 			# Cantos em "L".
-			Rect2(520, 190, 200, 50),
-			Rect2(520, 190, 50, 170),
-			Rect2(880, 660, 200, 50),
-			Rect2(1030, 540, 50, 170),
-			Rect2(880, 190, 200, 50),
-			Rect2(1030, 190, 50, 170),
-			Rect2(520, 660, 200, 50),
-			Rect2(520, 540, 50, 170),
+			Rect2(520, 190, 200, 50), Rect2(520, 190, 50, 170),
+			Rect2(880, 660, 200, 50), Rect2(1030, 540, 50, 170),
+			Rect2(880, 190, 200, 50), Rect2(1030, 190, 50, 170),
+			Rect2(520, 660, 200, 50), Rect2(520, 540, 50, 170),
 			# Cruz no meio.
-			Rect2(775, 360, 50, 180),
-			Rect2(700, 425, 200, 50),
+			Rect2(775, 360, 50, 180), Rect2(700, 425, 200, 50),
 			# Blocos soltos.
-			Rect2(230, 590, 50, 50),
-			Rect2(1320, 260, 50, 50),
-			Rect2(230, 260, 50, 50),
-			Rect2(1320, 590, 50, 50),
+			Rect2(230, 590, 50, 50), Rect2(1320, 260, 50, 50),
+			Rect2(230, 260, 50, 50), Rect2(1320, 590, 50, 50),
 		],
 		"agua": [],
 		"pontes": [],
@@ -104,46 +83,30 @@ const MAPAS := [
 		"pocas": [Rect2(600, 270, 110, 60), Rect2(890, 570, 110, 60)],
 		"luz": [Rect2(660, 40, 280, 140), Rect2(660, 720, 280, 140)],
 		"inicios": [Vector2(140, 140), Vector2(1460, 760), Vector2(1460, 140), Vector2(140, 760)],
-		"pontos_upgrade":
-		[
-			Vector2(800, 110),
-			Vector2(800, 790),
-			Vector2(450, 450),
-			Vector2(1150, 450),
-			Vector2(640, 300),
-			Vector2(960, 600),
-			Vector2(960, 300),
-			Vector2(640, 600),
+		"pontos_upgrade": [
+			Vector2(800, 110), Vector2(800, 790), Vector2(450, 450), Vector2(1150, 450),
+			Vector2(640, 300), Vector2(960, 600), Vector2(960, 300), Vector2(640, 600),
 		],
 	},
 	{
 		"nome": "Lago",
 		"semente": 33,
-		"paredes":
-		[
-			Rect2(250, 190, 70, 70),
-			Rect2(1280, 640, 70, 70),
-			Rect2(1280, 190, 70, 70),
-			Rect2(250, 640, 70, 70),
-			Rect2(770, 70, 60, 60),
-			Rect2(770, 770, 60, 60),
+		"paredes": [
+			Rect2(250, 190, 70, 70), Rect2(1280, 640, 70, 70),
+			Rect2(1280, 190, 70, 70), Rect2(250, 640, 70, 70),
+			Rect2(770, 70, 60, 60), Rect2(770, 770, 60, 60),
 			# Pilares dos dois lados da ponte, para se esconder antes de atravessar.
-			Rect2(330, 330, 40, 90),
-			Rect2(330, 480, 40, 90),
-			Rect2(1230, 330, 40, 90),
-			Rect2(1230, 480, 40, 90),
+			Rect2(330, 330, 40, 90), Rect2(330, 480, 40, 90),
+			Rect2(1230, 330, 40, 90), Rect2(1230, 480, 40, 90),
 			# Muretas em cima e embaixo do lago.
-			Rect2(950, 100, 120, 40),
-			Rect2(530, 760, 120, 40),
+			Rect2(950, 100, 120, 40), Rect2(530, 760, 120, 40),
 		],
 		# Um lago grande e oval no meio.
-		"agua":
-		[
+		"agua": [
 			Rect2(500, 230, 600, 440),
 		],
 		# Uma ponte de um lado ao outro, no meio do lago.
-		"pontes":
-		[
+		"pontes": [
 			Rect2(470, 410, 660, 80),
 		],
 		# Juncos na beira do lago e sol em cima da ponte.
@@ -151,87 +114,55 @@ const MAPAS := [
 		"pocas": [Rect2(180, 420, 110, 70), Rect2(1310, 410, 110, 70)],
 		"luz": [Rect2(470, 380, 660, 140)],
 		"inicios": [Vector2(140, 140), Vector2(1460, 760), Vector2(1460, 140), Vector2(140, 760)],
-		"pontos_upgrade":
-		[
-			Vector2(400, 450),
-			Vector2(1200, 450),
-			Vector2(800, 160),
-			Vector2(800, 740),
-			Vector2(400, 120),
-			Vector2(1200, 780),
-			Vector2(1200, 120),
-			Vector2(400, 780),
+		"pontos_upgrade": [
+			Vector2(400, 450), Vector2(1200, 450), Vector2(800, 160), Vector2(800, 740),
+			Vector2(400, 120), Vector2(1200, 780), Vector2(1200, 120), Vector2(400, 780),
 		],
 	},
 	{
 		"nome": "Rios",
 		"semente": 45,
-		"paredes":
-		[
-			Rect2(760, 240, 80, 80),
-			Rect2(760, 580, 80, 80),
-			Rect2(240, 425, 120, 50),
-			Rect2(1240, 425, 120, 50),
+		"paredes": [
+			Rect2(760, 240, 80, 80), Rect2(760, 580, 80, 80),
+			Rect2(240, 425, 120, 50), Rect2(1240, 425, 120, 50),
 			# Muretas na entrada das pontes, para esperar escondido.
-			Rect2(340, 150, 40, 100),
-			Rect2(340, 650, 40, 100),
-			Rect2(1220, 150, 40, 100),
-			Rect2(1220, 650, 40, 100),
+			Rect2(340, 150, 40, 100), Rect2(340, 650, 40, 100),
+			Rect2(1220, 150, 40, 100), Rect2(1220, 650, 40, 100),
 			# Blocos no meio, perto da cerca.
-			Rect2(900, 90, 50, 90),
-			Rect2(650, 720, 50, 90),
+			Rect2(900, 90, 50, 90), Rect2(650, 720, 50, 90),
 		],
 		# Dois rios de cima a baixo (passam por baixo da cerca).
-		"agua":
-		[
+		"agua": [
 			Rect2(470, -60, 90, 1020),
 			Rect2(1040, -60, 90, 1020),
 		],
-		"pontes":
-		[
-			Rect2(445, 170, 140, 90),
-			Rect2(445, 640, 140, 90),
-			Rect2(1015, 170, 140, 90),
-			Rect2(1015, 640, 140, 90),
+		"pontes": [
+			Rect2(445, 170, 140, 90), Rect2(445, 640, 140, 90),
+			Rect2(1015, 170, 140, 90), Rect2(1015, 640, 140, 90),
 		],
 		# Duas faixas de capim no meio, com um corredor entre elas.
 		"grama": [Rect2(690, 345, 220, 70), Rect2(690, 485, 220, 70)],
 		"pocas": [Rect2(150, 560, 110, 70), Rect2(1340, 270, 110, 70)],
 		"luz": [Rect2(420, 140, 190, 150), Rect2(990, 610, 190, 150)],
 		"inicios": [Vector2(180, 180), Vector2(1420, 720), Vector2(1420, 180), Vector2(180, 720)],
-		"pontos_upgrade":
-		[
-			Vector2(800, 120),
-			Vector2(800, 780),
-			Vector2(660, 450),
-			Vector2(940, 450),
-			Vector2(300, 300),
-			Vector2(1300, 600),
-			Vector2(1300, 300),
-			Vector2(300, 600),
+		"pontos_upgrade": [
+			Vector2(800, 120), Vector2(800, 780), Vector2(660, 450), Vector2(940, 450),
+			Vector2(300, 300), Vector2(1300, 600), Vector2(1300, 300), Vector2(300, 600),
 		],
 	},
 	{
 		"nome": "Ruínas",
 		"semente": 58,
-		"paredes":
-		[
-			Rect2(560, 150, 180, 50),
-			Rect2(860, 700, 180, 50),
-			Rect2(860, 150, 180, 50),
-			Rect2(560, 700, 180, 50),
-			Rect2(240, 140, 50, 150),
-			Rect2(1310, 610, 50, 150),
-			Rect2(1310, 140, 50, 150),
-			Rect2(240, 610, 50, 150),
-			Rect2(770, 330, 60, 60),
-			Rect2(770, 510, 60, 60),
-			Rect2(110, 290, 80, 40),
-			Rect2(1410, 570, 80, 40),
+		"paredes": [
+			Rect2(560, 150, 180, 50), Rect2(860, 700, 180, 50),
+			Rect2(860, 150, 180, 50), Rect2(560, 700, 180, 50),
+			Rect2(240, 140, 50, 150), Rect2(1310, 610, 50, 150),
+			Rect2(1310, 140, 50, 150), Rect2(240, 610, 50, 150),
+			Rect2(770, 330, 60, 60), Rect2(770, 510, 60, 60),
+			Rect2(110, 290, 80, 40), Rect2(1410, 570, 80, 40),
 		],
 		# Dois laguinhos redondos, um de cada lado.
-		"agua":
-		[
+		"agua": [
 			Rect2(370, 340, 220, 220),
 			Rect2(1010, 340, 220, 220),
 		],
@@ -241,32 +172,20 @@ const MAPAS := [
 		"pocas": [Rect2(740, 415, 120, 70)],
 		"luz": [Rect2(620, 210, 360, 100), Rect2(620, 590, 360, 100)],
 		"inicios": [Vector2(130, 450), Vector2(1470, 450), Vector2(800, 110), Vector2(800, 790)],
-		"pontos_upgrade":
-		[
-			Vector2(480, 260),
-			Vector2(1120, 640),
-			Vector2(1120, 260),
-			Vector2(480, 640),
-			Vector2(650, 450),
-			Vector2(950, 450),
-			Vector2(140, 140),
-			Vector2(1460, 760),
+		"pontos_upgrade": [
+			Vector2(480, 260), Vector2(1120, 640), Vector2(1120, 260), Vector2(480, 640),
+			Vector2(650, 450), Vector2(950, 450), Vector2(140, 140), Vector2(1460, 760),
 		],
 	},
 	{
 		"nome": "Capinzal",
 		"semente": 71,
-		"paredes":
-		[
-			Rect2(380, 200, 60, 60),
-			Rect2(1160, 640, 60, 60),
-			Rect2(1160, 200, 60, 60),
-			Rect2(380, 640, 60, 60),
+		"paredes": [
+			Rect2(380, 200, 60, 60), Rect2(1160, 640, 60, 60),
+			Rect2(1160, 200, 60, 60), Rect2(380, 640, 60, 60),
 			# Muretas em volta das poças e um bloco no meio do sol.
-			Rect2(200, 330, 140, 40),
-			Rect2(200, 530, 140, 40),
-			Rect2(1260, 330, 140, 40),
-			Rect2(1260, 530, 140, 40),
+			Rect2(200, 330, 140, 40), Rect2(200, 530, 140, 40),
+			Rect2(1260, 330, 140, 40), Rect2(1260, 530, 140, 40),
 			Rect2(770, 420, 60, 60),
 		],
 		"agua": [],
@@ -276,16 +195,9 @@ const MAPAS := [
 		"pocas": [Rect2(220, 415, 110, 70), Rect2(1270, 415, 110, 70)],
 		"luz": [Rect2(40, 395, 1520, 110)],
 		"inicios": [Vector2(140, 140), Vector2(1460, 760), Vector2(1460, 140), Vector2(140, 760)],
-		"pontos_upgrade":
-		[
-			Vector2(260, 290),
-			Vector2(1340, 610),
-			Vector2(1340, 290),
-			Vector2(260, 610),
-			Vector2(480, 450),
-			Vector2(1120, 450),
-			Vector2(800, 70),
-			Vector2(800, 830),
+		"pontos_upgrade": [
+			Vector2(260, 290), Vector2(1340, 610), Vector2(1340, 290), Vector2(260, 610),
+			Vector2(480, 450), Vector2(1120, 450), Vector2(800, 70), Vector2(800, 830),
 		],
 	},
 ]

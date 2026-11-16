@@ -6,12 +6,12 @@ extends Node2D
 const DURACAO := 0.9
 const COR := Color(0.92, 0.97, 1.0)
 
-var tamanho := 1.0  # 1 = ondinha de quem anda; menor para quem está parado
+var tamanho := 1.0 # 1 = ondinha de quem anda; menor para quem está parado
 var _tempo := 0.0
 
 
 func _ready() -> void:
-	z_index = -3  # na água, por baixo das pegadas e dos camaleões
+	z_index = -3 # na água, por baixo das pegadas e dos camaleões
 
 
 func _process(delta: float) -> void:

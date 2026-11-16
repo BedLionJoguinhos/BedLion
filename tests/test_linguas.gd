@@ -5,10 +5,8 @@ const Linguas := preload("res://scripts/linguas.gd")
 var passed := 0
 var failed := 0
 
-
 func get_suite_name() -> String:
 	return "Testes de Línguas e Poderes (scripts/linguas.gd)"
-
 
 func assert_true(condition: bool, message: String) -> void:
 	if condition:
@@ -18,16 +16,13 @@ func assert_true(condition: bool, message: String) -> void:
 		printerr("  ✗ FALHA: %s" % message)
 		failed += 1
 
-
 func run_tests() -> void:
 	test_lingua_basica()
 	test_todos_os_tipos()
 	test_upgrades_validos()
 
-
 func test_lingua_basica() -> void:
 	assert_true(Linguas.TIPOS.has(Linguas.BASICA), "A língua básica padrão está presente em TIPOS")
-
 
 func test_todos_os_tipos() -> void:
 	for tipo_id in Linguas.TIPOS.keys():
@@ -41,7 +36,6 @@ func test_todos_os_tipos() -> void:
 		assert_true(velocidade > 0.0, "Tipo '%s' possui velocidade positiva (> 0)" % tipo_id)
 		assert_true(tempo_puxada > 0.0, "Tipo '%s' possui tempo de puxada positivo (> 0)" % tipo_id)
 		assert_true(cor is Color, "Tipo '%s' possui definição de cor válida" % tipo_id)
-
 
 func test_upgrades_validos() -> void:
 	assert_true(Linguas.UPGRADES.size() > 0, "A lista de UPGRADES contém itens")
