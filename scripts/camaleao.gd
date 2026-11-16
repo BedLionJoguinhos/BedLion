@@ -11,6 +11,11 @@ extends CharacterBody2D
 ##   mas só depois de TEMPO_ATE_SE_SOLTAR.
 ## - Golpe: curto, na frente dele; mata. Funciona visível e invisível, mas
 ##   golpear faz ele aparecer de novo, então não dá para ficar batendo escondido.
+##   Com a língua fora, o golpe recolhe a língua e bate na hora (quem puxou não
+##   precisa soltar a língua antes de bater).
+## Mira: no controle, o analógico direito aponta a língua e o golpe (o camaleão
+## vira para lá e aparece uma setinha). Solto, vale a direção em que ele olha.
+## No teclado 1, as setas miram quando o teclado 2 não está jogando.
 ## Invisível: segura o botão por TEMPO_PARA_SUMIR segundos para sumir para todos
 ## (inclusive para o próprio jogador). Se tiver um upgrade de língua, ele cai no chão.
 ## Pés sujos: quem pisa em cocô de pombo (coco_pombo.gd) ou sai de uma poça
@@ -83,6 +88,8 @@ var controle := "teclado1" # prefixo das ações em controles.gd
 ## "" = jogador de verdade; "facil", "medio" ou "dificil" = bot (bot.gd);
 ## "parado" = bot de teste que não faz nada.
 var bot := ""
+## Teclado 1 mirando com as setas (main.gd liga quando o teclado 2 não joga).
+var mira_com_setas := false
 var cor := Color.WHITE
 var mundo: Node # onde efeitos e upgrades largados são criados
 var mapa: Dictionary = {} # mapa da rodada (de mapas.gd), para saber onde tem água
@@ -108,6 +115,7 @@ var _imune_grude := 0.0 # segundos que ainda não gruda (acabou de se soltar)
 var _embalo := Vector2.ZERO # velocidade que sobrou de um voo de gancho solto no meio
 var _entrada_gancho := Vector2.ZERO # direção apertada enquanto voa com o gancho
 var _tempo_olho := 0.0 # animação do vulto que o poder "olho" mostra
+var _mirando := false # analógico direito (ou setas) apontando: mostra a setinha de mira
 
 # Língua lançada por este camaleão.
 var _estado_lingua := "" # "" = na boca; "indo", "voltando", "puxando", "trazendo" ou "gancho"
@@ -162,6 +170,7 @@ func _physics_process(delta: float) -> void:
 	var quer_lingua := false
 	var apertou_invisivel := false
 	var segurando_invisivel := false
+	var mira := Vector2.ZERO
 	if bot != "":
 		if _cerebro:
 			var acoes: Dictionary = _cerebro.agir(delta)
@@ -182,8 +191,10 @@ func _physics_process(delta: float) -> void:
 		quer_lingua = Input.is_action_just_pressed(controle + "_lingua")
 		apertou_invisivel = Input.is_action_just_pressed(controle + "_invisivel")
 		segurando_invisivel = Input.is_action_pressed(controle + "_invisivel")
+		mira = _ler_mira()
 
 	if _sendo_puxado():
+		_mirando = false
 		_ser_arrastado(delta, quer_golpear or quer_lingua, quer_golpear)
 		return
 
@@ -202,19 +213,24 @@ func _physics_process(delta: float) -> void:
 		# Com a língua fora fica parado; apertar a língua de novo solta.
 		# No gancho, o direcional balança o voo para os lados, e soltar no meio
 		# do caminho mantém o embalo (dá para se arremessar).
+		# O golpe também recolhe a língua e já bate (logo abaixo).
 		_entrada_gancho = entrada
 		entrada = Vector2.ZERO
-		quer_golpear = false
-		if quer_lingua:
-			if _estado_lingua == "gancho":
-				_embalo = velocity
-				soltar_lingua(RECARGA_LINGUA)
-			else:
-				soltar_lingua(RECARGA_SOLTAR)
+		if quer_golpear and _recarga_golpe <= 0.0:
+			_recolher_lingua()
 			quer_lingua = false
-	else:
+		elif quer_lingua:
+			_recolher_lingua()
+			quer_lingua = false
+		else:
+			quer_golpear = false
+	if _estado_lingua == "":
 		if entrada != Vector2.ZERO:
 			direcao = entrada.normalized()
+		# Mirando, a língua e o golpe vão para onde a mira aponta.
+		if mira != Vector2.ZERO:
+			direcao = mira
+	_mirando = mira != Vector2.ZERO and _estado_lingua == ""
 	if absf(direcao.x) > 0.1:
 		_olhando_direita = direcao.x > 0.0
 	velocity = entrada * VELOCIDADE + _embalo
@@ -241,6 +257,30 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 	if _estado_lingua != "":
 		_desenho_lingua.queue_redraw()
+
+
+## Direção do analógico direito (controle) ou das setas (teclado 1, se ligado).
+## Vector2.ZERO = não está mirando (vale a direção em que olha).
+func _ler_mira() -> Vector2:
+	var mira := Vector2.ZERO
+	if controle.begins_with("pad"):
+		var aparelho := int(controle.substr(3))
+		mira = Vector2(Input.get_joy_axis(aparelho, JOY_AXIS_RIGHT_X), Input.get_joy_axis(aparelho, JOY_AXIS_RIGHT_Y))
+		if mira.length() < Controles.ZONA_MORTA_MIRA:
+			return Vector2.ZERO
+	elif mira_com_setas:
+		mira = Input.get_vector("teclado2_esquerda", "teclado2_direita", "teclado2_cima", "teclado2_baixo")
+	return mira.normalized()
+
+
+## Recolhe a língua antes da hora (botão da língua ou golpe). No gancho, soltar
+## no meio do voo mantém o embalo (dá para se arremessar).
+func _recolher_lingua() -> void:
+	if _estado_lingua == "gancho":
+		_embalo = velocity
+		soltar_lingua(RECARGA_LINGUA)
+	else:
+		soltar_lingua(RECARGA_SOLTAR)
 
 
 ## Invisível: um toque no botão faz aparecer na hora.
@@ -816,11 +856,28 @@ func _draw() -> void:
 		var cor_upgrade: Color = Linguas.TIPOS[lingua]["cor"]
 		draw_circle(Vector2(0, -42), 6.0, Linguas.CONTORNO)
 		draw_circle(Vector2(0, -42), 4.5, cor_upgrade)
+	if _mirando:
+		_desenhar_mira()
 	if _carga_invisivel > 0.0:
 		# Anel que vai se completando enquanto o botão de invisível é segurado.
 		var t := _carga_invisivel / TEMPO_PARA_SUMIR
 		draw_arc(Vector2.ZERO, 34.0, 0.0, TAU, 32, Color(0, 0, 0, 0.3), 5.0, true)
 		draw_arc(Vector2.ZERO, 34.0, -PI / 2.0, -PI / 2.0 + TAU * t, 32, Color.WHITE, 3.0, true)
+
+
+## Setinha de mira: um tracejado curto e uma ponta de seta na direção da mira.
+func _desenhar_mira() -> void:
+	var lado := direcao.orthogonal()
+	for i in 3:
+		var p := direcao * (30.0 + i * 9.0)
+		draw_circle(p, 3.2, Color(0, 0, 0, 0.35))
+		draw_circle(p, 2.2, Color(1, 1, 1, 0.8))
+	var ponta := direcao * 66.0
+	var base := direcao * 54.0
+	var seta := PackedVector2Array([ponta, base + lado * 7.0, base - lado * 7.0])
+	draw_colored_polygon(seta, Color(1, 1, 1, 0.9))
+	seta.append(ponta)
+	draw_polyline(seta, Color(0, 0, 0, 0.5), 2.0, true)
 
 
 ## Poder "olho": um círculo tracejado mostra até onde ele enxerga, e quem estiver

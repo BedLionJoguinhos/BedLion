@@ -551,6 +551,8 @@ func _nova_rodada() -> void:
 		var camaleao := Camaleao.new()
 		camaleao.controle = dados["controle"]
 		camaleao.bot = dados["bot"]
+		# Sem o teclado 2 na partida, as setas ficam livres para o teclado 1 mirar.
+		camaleao.mira_com_setas = dados["controle"] == "teclado1" and not _tem_teclado2()
 		camaleao.cor = dados["cor"]
 		camaleao.position = inicio
 		camaleao.direcao = Vector2.RIGHT if inicio.x < TAMANHO.x / 2.0 else Vector2.LEFT
@@ -560,6 +562,13 @@ func _nova_rodada() -> void:
 		camaleao.morreu.connect(_ao_morrer)
 		_rodada.add_child(camaleao)
 		_vivos.append(camaleao)
+
+
+func _tem_teclado2() -> bool:
+	for dados in _jogadores:
+		if dados["controle"] == "teclado2":
+			return true
+	return false
 
 
 func _spawnar_upgrade() -> void:

@@ -133,8 +133,16 @@ func agir(delta: float) -> Dictionary:
 		return acoes
 	_tentou_se_soltar = false
 
-	# Língua fora: fica parado esperando (apertar de novo soltaria).
+	# Língua fora: fica parado esperando (apertar de novo soltaria). Puxando
+	# alguém, golpeia assim que ele chega ao alcance (o golpe recolhe a língua).
 	if eu._estado_lingua != "":
+		if eu._estado_lingua == "puxando" and is_instance_valid(eu._preso) \
+				and eu.position.distance_to(eu._preso.position) <= eu.ALCANCE_GOLPE * 0.9 \
+				and eu._recarga_golpe <= 0.0:
+			_tempo_perto += delta
+			if _tempo_perto >= reacao * 0.6:
+				_tempo_perto = 0.0
+				acoes["golpe"] = true
 		return acoes
 
 	# Alguém ao alcance do golpe (visto, ou um invisível que ele acabou de notar):

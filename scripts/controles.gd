@@ -37,6 +37,7 @@ const BOTOES_PAD := {
 	"lingua": [JOY_BUTTON_X],
 }
 ## Eixos do controle: [eixo, sentido]. Analógico esquerdo move; RT é a língua, LT o invisível.
+## O analógico direito mira (lido direto em camaleao.gd, sem ação aqui).
 const EIXOS_PAD := {
 	"cima": [JOY_AXIS_LEFT_Y, -1.0],
 	"baixo": [JOY_AXIS_LEFT_Y, 1.0],
@@ -72,6 +73,8 @@ const INTERFACE_EIXOS_PAD := {
 const MAX_PADS := 8
 ## Quanto o analógico precisa ser empurrado para contar (evita andar sozinho).
 const ZONA_MORTA := 0.3
+## Mesmo para o analógico direito (mira da língua e do golpe), medido no círculo todo.
+const ZONA_MORTA_MIRA := 0.35
 
 
 func _ready() -> void:
