@@ -28,10 +28,10 @@ const ESPERA_ETAPA := 0.25
 
 ## Cada vaga: {} vazia, ou {"controle": String, "cor": int (índice em Partida.CORES), "pronto": bool}.
 var _vagas: Array = [{}, {}, {}, {}]
-var _etapa := "entrar"  # "entrar" ou "bots"
+var _etapa := "entrar" # "entrar" ou "bots"
 var _quantidade_bots := 0
 var _dificuldade := "medio"
-var _linha := 0  # etapa 2: 0 = quantidade de bots, 1 = dificuldade
+var _linha := 0 # etapa 2: 0 = quantidade de bots, 1 = dificuldade
 var _espera := 0.0
 var _tempo := 0.0
 
@@ -117,7 +117,7 @@ func _process(delta: float) -> void:
 	if _espera <= 0.0:
 		for controle in _controles_disponiveis():
 			if _espera > 0.0:
-				break  # mudou de etapa agora: o resto espera o próximo aperto
+				break # mudou de etapa agora: o resto espera o próximo aperto
 			if _etapa == "entrar":
 				_entrada_etapa_entrar(controle)
 			else:
@@ -136,12 +136,9 @@ func _unhandled_input(evento: InputEvent) -> void:
 			_continuar_com_mouse()
 		return
 	var botao := evento as InputEventJoypadButton
-	if botao and botao.pressed and not botao.is_echo() and _espera <= 0.0:
-		var controle_pad := "pad%d" % botao.device
-		if botao.button_index == JOY_BUTTON_B and _etapa == "entrar" and _vaga_de(controle_pad) < 0 and _humanos() == 0:
+	if botao and botao.pressed and botao.button_index == JOY_BUTTON_B and _espera <= 0.0:
+		if _vaga_de("pad%d" % botao.device) < 0:
 			Partida.ir_para(Partida.CENA_MENU)
-		elif botao.button_index == JOY_BUTTON_START and _vaga_de(controle_pad) >= 0:
-			_continuar_com_mouse()
 
 
 ## Teclados e controles conectados (cada um pode entrar numa vaga).
@@ -158,7 +155,6 @@ func _apertou(controle: String, acao: String) -> bool:
 
 
 # --- Etapa 1: entrar e escolher a cor ----------------------------------------
-
 
 func _entrada_etapa_entrar(controle: String) -> void:
 	var vaga := _vaga_de(controle)
@@ -178,7 +174,6 @@ func _entrada_etapa_entrar(controle: String) -> void:
 		dados["cor"] = _proxima_cor_livre(dados["cor"], 1)
 	elif _apertou(controle, "golpe"):
 		dados["pronto"] = true
-		Controles.vibrar(controle, 0.2, 0.1, 0.07)
 		_atualizar()
 		if _todos_prontos():
 			_ir_para_bots()
@@ -191,7 +186,6 @@ func _entrar(controle: String) -> void:
 	for i in _vagas.size():
 		if _vagas[i].is_empty():
 			_vagas[i] = {"controle": controle, "cor": _proxima_cor_livre(i - 1, 1), "pronto": false}
-			Controles.vibrar(controle, 0.25, 0.0, 0.06)
 			_atualizar()
 			return
 
@@ -254,7 +248,6 @@ func _continuar_com_mouse() -> void:
 
 # --- Etapa 2: bots e dificuldade ---------------------------------------------
 
-
 func _ir_para_bots() -> void:
 	if _humanos() >= MAX_JOGADORES:
 		_quantidade_bots = 0
@@ -279,9 +272,7 @@ func _voltar_para_entrar() -> void:
 func _entrada_etapa_bots(controle: String) -> void:
 	if _vaga_de(controle) < 0:
 		return
-	var vert := absf(Input.get_axis(controle + "_cima", controle + "_baixo"))
-	var horiz := absf(Input.get_axis(controle + "_esquerda", controle + "_direita"))
-	if (_apertou(controle, "cima") or _apertou(controle, "baixo")) and _quantidade_bots > 0 and vert >= horiz:
+	if (_apertou(controle, "cima") or _apertou(controle, "baixo")) and _quantidade_bots > 0:
 		_linha = posmod(_linha + (-1 if _apertou(controle, "cima") else 1), 2)
 		_atualizar()
 	elif _apertou(controle, "esquerda") or _apertou(controle, "direita"):
@@ -355,7 +346,6 @@ func _comecar() -> void:
 
 # --- Tela ---------------------------------------------------------------------
 
-
 func _montar_painel_bots() -> void:
 	_painel_bots = Control.new()
 	_painel_bots.position = Vector2(0, 610)
@@ -368,22 +358,18 @@ func _montar_painel_bots() -> void:
 	var menos := Ui.botao("-", Vector2(60, 56), 34)
 	menos.position = Vector2(620, 18)
 	menos.focus_mode = Control.FOCUS_NONE
-	menos.pressed.connect(
-		func() -> void:
-			_linha = 0
-			_ajustar_bots(-1)
-	)
+	menos.pressed.connect(func() -> void:
+		_linha = 0
+		_ajustar_bots(-1))
 	_painel_bots.add_child(menos)
 	_rotulo_bots = Ui.rotulo("0", 36, Vector2(690, 20), 90)
 	_painel_bots.add_child(_rotulo_bots)
 	var mais := Ui.botao("+", Vector2(60, 56), 34)
 	mais.position = Vector2(790, 18)
 	mais.focus_mode = Control.FOCUS_NONE
-	mais.pressed.connect(
-		func() -> void:
-			_linha = 0
-			_ajustar_bots(1)
-	)
+	mais.pressed.connect(func() -> void:
+		_linha = 0
+		_ajustar_bots(1))
 	_painel_bots.add_child(mais)
 
 	_rotulo_linha_dificuldade = Ui.rotulo("Dificuldade", 32, Vector2(330, 100), 260)
@@ -426,10 +412,10 @@ func _atualizar() -> void:
 			botao.disabled = sem_bots
 			botao.modulate.a = 0.5 if sem_bots else 1.0
 			botao.set_pressed_no_signal(not sem_bots and Partida.DIFICULDADES[i] == _dificuldade)
-		_ajuda.text = "cima/baixo: linha    lados: muda    golpe / Start: começar    invisível: voltar    Esc: menu"
+		_ajuda.text = "cima/baixo: escolhe a linha    lados: muda    golpe: começar    invisível: voltar    Esc: menu"
 	else:
 		_titulo.text = "Escolha seu camaleão"
-		_ajuda.text = "golpe: entrar / pronto    lados: cor    invisível: desfaz / sai    Start / Enter: avançar    Esc / B: menu"
+		_ajuda.text = "golpe: entra / fica pronto    lados: muda a cor    invisível: desfaz / sai    Esc: menu"
 
 
 func _desenhar_vagas() -> void:
@@ -455,9 +441,8 @@ func _desenhar_vagas() -> void:
 			_texto(fonte, Vector2(meio, cartao.position.y + 50), "Jogador %d" % (i + 1), 28, Color.WHITE)
 			var balanco := 0.0 if pronto else sin(_tempo * 3.0 + i) * 5.0
 			var passo := _tempo * 7.0 if not pronto else 0.0
-			Desenho.desenhar(
-				_desenho, Transform2D(0.0, Vector2.ONE * 3.0, 0.0, Vector2(meio, cartao.position.y + 170 + balanco)), cor, Vector2.RIGHT, true, passo
-			)
+			Desenho.desenhar(_desenho, Transform2D(0.0, Vector2.ONE * 3.0, 0.0,
+				Vector2(meio, cartao.position.y + 170 + balanco)), cor, Vector2.RIGHT, true, passo)
 			_desenho.draw_set_transform(Vector2.ZERO)
 			var controle: String = vaga["controle"]
 			_texto(fonte, Vector2(meio, cartao.position.y + 290), Partida.CORES[vaga["cor"]]["nome"], 32, cor.lightened(0.2))
@@ -475,9 +460,8 @@ func _desenhar_vagas() -> void:
 			_fundo_cartao.border_color = Color(cor_bot, 0.4)
 			_fundo_cartao.draw(_desenho.get_canvas_item(), cartao)
 			_texto(fonte, Vector2(meio, cartao.position.y + 50), "Bot", 28, Color.WHITE)
-			Desenho.desenhar(
-				_desenho, Transform2D(0.0, Vector2.ONE * 3.0, 0.0, Vector2(meio, cartao.position.y + 170)), Color(cor_bot, 0.85), Vector2.LEFT, false, 0.0
-			)
+			Desenho.desenhar(_desenho, Transform2D(0.0, Vector2.ONE * 3.0, 0.0,
+				Vector2(meio, cartao.position.y + 170)), Color(cor_bot, 0.85), Vector2.LEFT, false, 0.0)
 			_desenho.draw_set_transform(Vector2.ZERO)
 			_texto(fonte, Vector2(meio, cartao.position.y + 290), Partida.CORES[indice]["nome"], 32, cor_bot.lightened(0.2))
 			_texto(fonte, Vector2(meio, cartao.position.y + 330), Partida.NOMES_DIFICULDADE[_dificuldade], 24, Ui.AMARELO)

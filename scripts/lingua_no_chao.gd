@@ -9,27 +9,27 @@ const RAIO := 14.0
 const TEMPO_AFUNDAR := 0.6
 
 var tipo := "longa"
-var na_lingua := false  # sendo trazido pela língua de alguém
+var na_lingua := false # sendo trazido pela língua de alguém
 var _tempo := 0.0
-var _afundando := -1.0  # >= 0: segundos afundando
+var _afundando := -1.0 # >= 0: segundos afundando
 
 
 func _ready() -> void:
 	collision_layer = 0
-	collision_mask = 2  # camaleões
+	collision_mask = 2 # camaleões
 	var forma := CollisionShape2D.new()
 	var circulo := CircleShape2D.new()
 	circulo.radius = RAIO
 	forma.shape = circulo
 	add_child(forma)
 	add_to_group("upgrades_no_chao")
-	z_index = -1  # fica por baixo dos camaleões
+	z_index = -1 # fica por baixo dos camaleões
 
 
 func _physics_process(delta: float) -> void:
 	_tempo += delta
-	queue_redraw()  # flutua devagar e brilha
-	z_index = 1 if na_lingua else -1  # na língua, fica por cima de todo mundo
+	queue_redraw() # flutua devagar e brilha
+	z_index = 1 if na_lingua else -1 # na língua, fica por cima de todo mundo
 	if _afundando >= 0.0:
 		_afundando += delta
 		scale = Vector2.ONE * maxf(1.0 - _afundando / TEMPO_AFUNDAR, 0.0)
@@ -58,7 +58,7 @@ func _draw() -> void:
 	var pulso := 0.5 + 0.5 * sin(_tempo * 6.0)
 	draw_circle(Vector2.ZERO, RAIO + 6.0 * pulso, Color(cor, 0.3))
 	draw_set_transform(Vector2(0, 5), 0.0, Vector2(1.0, 0.35))
-	draw_circle(Vector2.ZERO, RAIO, Color(0, 0, 0, 0.25))  # sombra
+	draw_circle(Vector2.ZERO, RAIO, Color(0, 0, 0, 0.25)) # sombra
 	draw_set_transform(Vector2(0, sin(_tempo * 3.0) * 2.0 - 4.0))
 	# Bolha com um desenhinho do poder dentro.
 	draw_circle(Vector2.ZERO, RAIO, Linguas.CONTORNO)

@@ -5,7 +5,7 @@ extends Control
 
 const Desenho := preload("res://scripts/desenho_camaleao.gd")
 
-var jogadores: Array = []  # cada um: {"nome": String, "cor": Color, "bot": String}
+var jogadores: Array = [] # cada um: {"nome": String, "cor": Color, "bot": String}
 var pontos: Array = []
 var meta := 5
 var _fundo_estilo: StyleBoxFlat
@@ -39,7 +39,8 @@ func _draw() -> void:
 		var jogador: Dictionary = jogadores[i]
 		var cor: Color = jogador["cor"]
 		var x := inicio + i * largura_item
-		Desenho.desenhar(self, Transform2D(0.0, Vector2(0.55, 0.55), 0.0, Vector2(x + 22.0, 26.0)), cor, Vector2.RIGHT, true, 0.0)
+		Desenho.desenhar(self, Transform2D(0.0, Vector2(0.55, 0.55), 0.0, Vector2(x + 22.0, 26.0)),
+			cor, Vector2.RIGHT, true, 0.0)
 		draw_string(fonte, Vector2(x + 42.0, 30.0), jogador["nome"], HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color.WHITE)
 		if str(jogador.get("bot", "")) != "":
 			draw_string(fonte, Vector2(x + 42.0, 43.0), "bot", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.55))

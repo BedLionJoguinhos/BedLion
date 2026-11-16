@@ -26,66 +26,38 @@ extends RefCounted
 const BASICA := "basica"
 
 const TIPOS := {
-	"basica":
-	{
-		"nome": "Língua",
-		"alcance": 330.0,
-		"velocidade": 1100.0,
-		"tempo_puxada": 0.5,
+	"basica": {
+		"nome": "Língua", "alcance": 330.0, "velocidade": 1100.0, "tempo_puxada": 0.5,
 		"cor": Color(0.95, 0.4, 0.55),
 	},
-	"gancho":
-	{
-		"nome": "Gancho",
-		"alcance": 480.0,
-		"velocidade": 1400.0,
-		"tempo_puxada": 0.5,
+	"gancho": {
+		"nome": "Gancho", "alcance": 480.0, "velocidade": 1400.0, "tempo_puxada": 0.5,
 		"cor": Color(0.95, 0.55, 0.15),
-		"velocidade_voo": 950.0,  # px/s voando até a parede
-		"velocidade_balanco": 450.0,  # px/s para o lado quando aperta o direcional no voo
+		"velocidade_voo": 950.0, # px/s voando até a parede
+		"velocidade_balanco": 450.0, # px/s para o lado quando aperta o direcional no voo
 	},
-	"grude":
-	{
-		"nome": "Grude",
-		"alcance": 360.0,
-		"velocidade": 1100.0,
-		"tempo_puxada": 0.5,
+	"grude": {
+		"nome": "Grude", "alcance": 360.0, "velocidade": 1100.0, "tempo_puxada": 0.5,
 		"cor": Color(0.55, 0.85, 0.2),
-		"max_grudes": 2,  # rastros de grude de um mesmo camaleão no chão ao mesmo tempo
+		"max_grudes": 2, # rastros de grude de um mesmo camaleão no chão ao mesmo tempo
 	},
-	"muda":
-	{
-		"nome": "Muda de pele",
-		"alcance": 330.0,
-		"velocidade": 1100.0,
-		"tempo_puxada": 0.5,
+	"muda": {
+		"nome": "Muda de pele", "alcance": 330.0, "velocidade": 1100.0, "tempo_puxada": 0.5,
 		"cor": Color(0.93, 0.9, 0.78),
 	},
-	"olho":
-	{
-		"nome": "Olho de camaleão",
-		"alcance": 330.0,
-		"velocidade": 1100.0,
-		"tempo_puxada": 0.5,
+	"olho": {
+		"nome": "Olho de camaleão", "alcance": 330.0, "velocidade": 1100.0, "tempo_puxada": 0.5,
 		"cor": Color(0.3, 0.85, 0.95),
-		"raio_olho": 200.0,  # até onde ele enxerga quem está invisível
+		"raio_olho": 200.0, # até onde ele enxerga quem está invisível
 	},
 	# Os upgrades antigos continuam aqui: para voltar com eles, coloque
 	# "longa" ou "rapida" na lista UPGRADES lá embaixo.
-	"longa":
-	{
-		"nome": "Língua longa",
-		"alcance": 520.0,
-		"velocidade": 1250.0,
-		"tempo_puxada": 0.5,
+	"longa": {
+		"nome": "Língua longa", "alcance": 520.0, "velocidade": 1250.0, "tempo_puxada": 0.5,
 		"cor": Color(0.6, 0.4, 0.95),
 	},
-	"rapida":
-	{
-		"nome": "Língua rápida",
-		"alcance": 330.0,
-		"velocidade": 1800.0,
-		"tempo_puxada": 0.3,
+	"rapida": {
+		"nome": "Língua rápida", "alcance": 330.0, "velocidade": 1800.0, "tempo_puxada": 0.3,
 		"cor": Color(1.0, 0.8, 0.2),
 	},
 }
