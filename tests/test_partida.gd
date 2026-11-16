@@ -21,6 +21,8 @@ func run_tests() -> void:
 	test_mecanica_tremor()
 	test_menu_pausa()
 	test_tela_fim_partida()
+	test_pausa_controle_xbox()
+	test_desconexao_controle_em_partida()
 
 func test_constantes_tremor() -> void:
 	assert_true(MainScript.FORCA_TREMOR > 0.0 and MainScript.FORCA_TREMOR <= 10.0,
@@ -92,4 +94,58 @@ func test_tela_fim_partida() -> void:
 	main._ocultar_fim_partida()
 	assert_true(not tela.visible, "_ocultar_fim_partida oculta a tela de vitória")
 	
+	main.free()
+
+func test_pausa_controle_xbox() -> void:
+	var main: Node = MainScript.new()
+	var tree := Engine.get_main_loop() as SceneTree
+	tree.root.add_child(main)
+	main._ready()
+
+	var btn_start := InputEventJoypadButton.new()
+	btn_start.device = 0
+	btn_start.button_index = JOY_BUTTON_START
+	btn_start.pressed = true
+	main._unhandled_input(btn_start)
+	assert_true(tree.paused and main.get("_menu_pausa").visible,
+		"Botão Start do Xbox abre o menu de pausa e pausa a árvore")
+
+	var btn_b := InputEventJoypadButton.new()
+	btn_b.device = 0
+	btn_b.button_index = JOY_BUTTON_B
+	btn_b.pressed = true
+	main._unhandled_input(btn_b)
+	assert_true(not tree.paused and not main.get("_menu_pausa").visible,
+		"Botão B (ui_cancel) do Xbox despausa e fecha o menu de pausa")
+
+	main.free()
+
+func test_desconexao_controle_em_partida() -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	var partida := tree.root.get_node("Partida")
+	var jogadores_originais: Array = partida.jogadores.duplicate(true)
+	partida.jogadores = [
+		{"nome": "Verde", "cor": Color.GREEN, "controle": "pad0", "bot": ""},
+		{"nome": "Laranja", "cor": Color.ORANGE, "controle": "", "bot": "medio"},
+	]
+
+	var main: Node = MainScript.new()
+	tree.root.add_child(main)
+	main._ready()
+
+	main._ao_mudar_controles(0, false)
+	var aviso: Label = main.get("_rotulo_aviso_pausa")
+	assert_true(tree.paused and main.get("_menu_pausa").visible,
+		"Desconexão do controle de um jogador pausa automaticamente a partida")
+	assert_true(aviso.text.contains("Controle 1 desconectado"),
+		"Menu de pausa exibe aviso indicando qual controle desconectou")
+
+	main._ao_mudar_controles(0, true)
+	assert_true(aviso.text.contains("reconectado"),
+		"Aviso de pausa é atualizado quando o controle reconecta")
+
+	main._fechar_pausa()
+	assert_true(aviso.text == "", "Fechar a pausa limpa o aviso de desconexão")
+
+	partida.jogadores = jogadores_originais
 	main.free()

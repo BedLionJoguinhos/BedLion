@@ -26,14 +26,14 @@ const TECLADOS := {
 	},
 }
 
-## Botões do controle (nomes do Xbox: A, B, X, LB, RB e o direcional).
+## Botões do controle (padrão Xbox: A, B/Y, X, LB, RB e o direcional).
 const BOTOES_PAD := {
 	"cima": [JOY_BUTTON_DPAD_UP],
 	"baixo": [JOY_BUTTON_DPAD_DOWN],
 	"esquerda": [JOY_BUTTON_DPAD_LEFT],
 	"direita": [JOY_BUTTON_DPAD_RIGHT],
 	"golpe": [JOY_BUTTON_A, JOY_BUTTON_RIGHT_SHOULDER],
-	"invisivel": [JOY_BUTTON_B, JOY_BUTTON_LEFT_SHOULDER],
+	"invisivel": [JOY_BUTTON_B, JOY_BUTTON_Y, JOY_BUTTON_LEFT_SHOULDER],
 	"lingua": [JOY_BUTTON_X],
 }
 ## Eixos do controle: [eixo, sentido]. Analógico esquerdo move; RT é a língua, LT o invisível.
@@ -70,29 +70,36 @@ const INTERFACE_EIXOS_PAD := {
 }
 ## Quantos controles de videogame são registrados (pad0 até pad7).
 const MAX_PADS := 8
-## Quanto o analógico precisa ser empurrado para contar (evita andar sozinho).
-const ZONA_MORTA := 0.3
+## Zona morta do analógico esquerdo na arena (evita drift sem perder precisão).
+const ZONA_MORTA := 0.22
+## Zona morta para gatilhos analógicos (LT/RT) nas ações de combate.
+const ZONA_MORTA_GATILHO := 0.25
+## Zona morta mais alta na navegação de menus com o analógico esquerdo.
+const ZONA_MORTA_INTERFACE := 0.45
 
 
 func _ready() -> void:
 	for teclado in TECLADOS:
 		for acao in TECLADOS[teclado]:
-			var nome := _criar_acao("%s_%s" % [teclado, acao])
+			var nome := _criar_acao("%s_%s" % [teclado, acao], ZONA_MORTA)
 			for tecla in TECLADOS[teclado][acao]:
 				var evento := InputEventKey.new()
 				evento.keycode = tecla
-				InputMap.action_add_event(nome, evento)
+				if not InputMap.action_has_event(nome, evento):
+					InputMap.action_add_event(nome, evento)
 
 	# Uma ação separada para cada controle (o "device" diz de qual controle é),
 	# assim cada jogador só responde ao próprio controle.
 	for pad in MAX_PADS:
 		for acao in BOTOES_PAD:
-			var nome := _criar_acao("pad%d_%s" % [pad, acao])
+			var zona := ZONA_MORTA_GATILHO if (acao == "lingua" or acao == "invisivel") else ZONA_MORTA
+			var nome := _criar_acao("pad%d_%s" % [pad, acao], zona)
 			for botao in BOTOES_PAD[acao]:
 				var evento := InputEventJoypadButton.new()
 				evento.device = pad
 				evento.button_index = botao
-				InputMap.action_add_event(nome, evento)
+				if not InputMap.action_has_event(nome, evento):
+					InputMap.action_add_event(nome, evento)
 			if not EIXOS_PAD.has(acao):
 				continue
 			var eixo: Array = EIXOS_PAD[acao]
@@ -100,21 +107,22 @@ func _ready() -> void:
 			movimento.device = pad
 			movimento.axis = eixo[0]
 			movimento.axis_value = eixo[1]
-			InputMap.action_add_event(nome, movimento)
+			if not InputMap.action_has_event(nome, movimento):
+				InputMap.action_add_event(nome, movimento)
 
 	_registrar_interface()
 
 
 func _registrar_interface() -> void:
 	for acao in INTERFACE_TECLAS:
-		_criar_acao(acao)
+		_criar_acao(acao, ZONA_MORTA_INTERFACE)
 		for tecla in INTERFACE_TECLAS[acao]:
 			var evento := InputEventKey.new()
 			evento.keycode = tecla
 			if not InputMap.action_has_event(acao, evento):
 				InputMap.action_add_event(acao, evento)
 	for acao in INTERFACE_BOTOES_PAD:
-		_criar_acao(acao)
+		_criar_acao(acao, ZONA_MORTA_INTERFACE)
 		for botao in INTERFACE_BOTOES_PAD[acao]:
 			var evento := InputEventJoypadButton.new()
 			evento.device = -1
@@ -122,7 +130,7 @@ func _registrar_interface() -> void:
 			if not InputMap.action_has_event(acao, evento):
 				InputMap.action_add_event(acao, evento)
 	for acao in INTERFACE_EIXOS_PAD:
-		_criar_acao(acao)
+		_criar_acao(acao, ZONA_MORTA_INTERFACE)
 		var eixo: Array = INTERFACE_EIXOS_PAD[acao]
 		var movimento := InputEventJoypadMotion.new()
 		movimento.device = -1
@@ -132,10 +140,57 @@ func _registrar_interface() -> void:
 			InputMap.action_add_event(acao, movimento)
 
 
-func _criar_acao(nome: String) -> String:
+func _criar_acao(nome: String, zona_morta := ZONA_MORTA) -> String:
 	if not InputMap.has_action(nome):
-		InputMap.add_action(nome, ZONA_MORTA)
+		InputMap.add_action(nome, zona_morta)
+	else:
+		InputMap.action_set_deadzone(nome, zona_morta)
 	return nome
+
+
+## Retorna o índice do dispositivo gamepad para um prefixo "padN" (-1 se não for controle).
+static func dispositivo_de(controle: String) -> int:
+	if not controle.begins_with("pad"):
+		return -1
+	var sufixo := controle.substr(3)
+	if not sufixo.is_valid_int():
+		return -1
+	var indice := int(sufixo)
+	return indice if indice >= 0 and indice < MAX_PADS else -1
+
+
+static func eh_pad(controle: String) -> bool:
+	return dispositivo_de(controle) >= 0
+
+
+static func eh_xbox(aparelho: int) -> bool:
+	if aparelho < 0:
+		return false
+	var nome := Input.get_joy_name(aparelho).to_lower()
+	return nome.contains("xbox") or nome.contains("x-box") or nome.contains("xinput")
+
+
+static func tem_controle_conectado() -> bool:
+	for pad in Input.get_connected_joypads():
+		if pad >= 0 and pad < MAX_PADS:
+			return true
+	return false
+
+
+## Aciona vibração (rumble) apenas no controle correspondente ao jogador, se conectado.
+static func vibrar(controle: String, fraco: float, forte: float, duracao: float) -> void:
+	var aparelho := dispositivo_de(controle)
+	if aparelho < 0 or duracao <= 0.0:
+		return
+	if not Input.get_connected_joypads().has(aparelho):
+		return
+	Input.start_joy_vibration(aparelho, clampf(fraco, 0.0, 1.0), clampf(forte, 0.0, 1.0), duracao)
+
+
+static func parar_vibracao(controle: String) -> void:
+	var aparelho := dispositivo_de(controle)
+	if aparelho >= 0 and Input.get_connected_joypads().has(aparelho):
+		Input.stop_joy_vibration(aparelho)
 
 
 ## Texto curto de ajuda para mostrar na tela (golpe / invisível / língua).
@@ -145,8 +200,10 @@ func descricao(controle: String) -> String:
 			return "WASD, F/G/H"
 		"teclado2":
 			return "setas, . / , / ;"
-	if controle.begins_with("pad"):
-		return "controle %d, A/B/X" % (int(controle.substr(3)) + 1)
+	var aparelho := dispositivo_de(controle)
+	if aparelho >= 0:
+		var rotulo := "Xbox %d" % (aparelho + 1) if eh_xbox(aparelho) else "controle %d" % (aparelho + 1)
+		return "%s, A/B-Y/X" % rotulo
 	return "bot"
 
 
@@ -155,7 +212,7 @@ const NOMES_TECLADO := {
 	"teclado1": {"golpe": "F", "invisivel": "G", "lingua": "H", "lados": "A/D", "cima_baixo": "W/S"},
 	"teclado2": {"golpe": ".", "invisivel": ",", "lingua": ";", "lados": "direcional", "cima_baixo": "direcional"},
 }
-const NOMES_PAD := {"golpe": "A", "invisivel": "B", "lingua": "X", "lados": "direcional", "cima_baixo": "direcional"}
+const NOMES_PAD := {"golpe": "A", "invisivel": "B/Y", "lingua": "X", "pausa": "Start", "lados": "direcional", "cima_baixo": "direcional"}
 
 
 ## Nome curto do botão de uma ação para mostrar na tela (ex.: "F", ".", "A").

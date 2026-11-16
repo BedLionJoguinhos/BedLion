@@ -136,9 +136,12 @@ func _unhandled_input(evento: InputEvent) -> void:
 			_continuar_com_mouse()
 		return
 	var botao := evento as InputEventJoypadButton
-	if botao and botao.pressed and botao.button_index == JOY_BUTTON_B and _espera <= 0.0:
-		if _vaga_de("pad%d" % botao.device) < 0:
+	if botao and botao.pressed and not botao.is_echo() and _espera <= 0.0:
+		var controle_pad := "pad%d" % botao.device
+		if botao.button_index == JOY_BUTTON_B and _etapa == "entrar" and _vaga_de(controle_pad) < 0 and _humanos() == 0:
 			Partida.ir_para(Partida.CENA_MENU)
+		elif botao.button_index == JOY_BUTTON_START and _vaga_de(controle_pad) >= 0:
+			_continuar_com_mouse()
 
 
 ## Teclados e controles conectados (cada um pode entrar numa vaga).
@@ -174,6 +177,7 @@ func _entrada_etapa_entrar(controle: String) -> void:
 		dados["cor"] = _proxima_cor_livre(dados["cor"], 1)
 	elif _apertou(controle, "golpe"):
 		dados["pronto"] = true
+		Controles.vibrar(controle, 0.2, 0.1, 0.07)
 		_atualizar()
 		if _todos_prontos():
 			_ir_para_bots()
@@ -186,6 +190,7 @@ func _entrar(controle: String) -> void:
 	for i in _vagas.size():
 		if _vagas[i].is_empty():
 			_vagas[i] = {"controle": controle, "cor": _proxima_cor_livre(i - 1, 1), "pronto": false}
+			Controles.vibrar(controle, 0.25, 0.0, 0.06)
 			_atualizar()
 			return
 
@@ -272,7 +277,9 @@ func _voltar_para_entrar() -> void:
 func _entrada_etapa_bots(controle: String) -> void:
 	if _vaga_de(controle) < 0:
 		return
-	if (_apertou(controle, "cima") or _apertou(controle, "baixo")) and _quantidade_bots > 0:
+	var vert := absf(Input.get_axis(controle + "_cima", controle + "_baixo"))
+	var horiz := absf(Input.get_axis(controle + "_esquerda", controle + "_direita"))
+	if (_apertou(controle, "cima") or _apertou(controle, "baixo")) and _quantidade_bots > 0 and vert >= horiz:
 		_linha = posmod(_linha + (-1 if _apertou(controle, "cima") else 1), 2)
 		_atualizar()
 	elif _apertou(controle, "esquerda") or _apertou(controle, "direita"):
@@ -412,10 +419,10 @@ func _atualizar() -> void:
 			botao.disabled = sem_bots
 			botao.modulate.a = 0.5 if sem_bots else 1.0
 			botao.set_pressed_no_signal(not sem_bots and Partida.DIFICULDADES[i] == _dificuldade)
-		_ajuda.text = "cima/baixo: escolhe a linha    lados: muda    golpe: começar    invisível: voltar    Esc: menu"
+		_ajuda.text = "cima/baixo: linha    lados: muda    golpe / Start: começar    invisível: voltar    Esc: menu"
 	else:
 		_titulo.text = "Escolha seu camaleão"
-		_ajuda.text = "golpe: entra / fica pronto    lados: muda a cor    invisível: desfaz / sai    Esc: menu"
+		_ajuda.text = "golpe: entrar / pronto    lados: cor    invisível: desfaz / sai    Start / Enter: avançar    Esc / B: menu"
 
 
 func _desenhar_vagas() -> void:

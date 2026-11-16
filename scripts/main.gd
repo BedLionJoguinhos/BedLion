@@ -88,6 +88,7 @@ var _camera: Camera2D
 var _tempo_tremor := 0.0
 var _menu_pausa: Control
 var _botao_pausa_continuar: Button
+var _rotulo_aviso_pausa: Label
 var _tela_fim_partida: Control
 var _rotulo_vencedor: Label
 var _desenho_vencedor: Node2D
@@ -125,8 +126,12 @@ func tremer_tela(duracao := DURACAO_TREMOR) -> void:
 	_tempo_tremor = duracao
 
 
-func _abrir_pausa() -> void:
-	if _partida_acabou or (_menu_pausa and _menu_pausa.visible) or (_tela_fim_partida and _tela_fim_partida.visible):
+func _abrir_pausa(aviso := "") -> void:
+	if _partida_acabou or (_tela_fim_partida and _tela_fim_partida.visible):
+		return
+	if _rotulo_aviso_pausa:
+		_rotulo_aviso_pausa.text = aviso
+	if _menu_pausa and _menu_pausa.visible:
 		return
 	if get_tree():
 		get_tree().paused = true
@@ -137,6 +142,8 @@ func _abrir_pausa() -> void:
 
 
 func _fechar_pausa() -> void:
+	if _rotulo_aviso_pausa:
+		_rotulo_aviso_pausa.text = ""
 	if not _menu_pausa or not _menu_pausa.visible:
 		return
 	_menu_pausa.visible = false
@@ -154,14 +161,14 @@ func alternar_pausa() -> void:
 func _unhandled_input(evento: InputEvent) -> void:
 	var e_pausa := false
 	if evento is InputEventKey:
-		var tecla := evento as InputEventKey
-		if tecla.pressed and not tecla.echo and (tecla.keycode == KEY_ESCAPE or tecla.keycode == KEY_P):
+		var tecla_pausa := evento as InputEventKey
+		if tecla_pausa.pressed and not tecla_pausa.echo and (tecla_pausa.keycode == KEY_ESCAPE or tecla_pausa.keycode == KEY_P):
 			e_pausa = true
 	elif evento is InputEventJoypadButton:
 		var btn := evento as InputEventJoypadButton
-		if btn.pressed and btn.button_index == JOY_BUTTON_START:
+		if btn.pressed and not btn.is_echo() and btn.button_index == JOY_BUTTON_START:
 			e_pausa = true
-	elif get_tree().paused and evento.is_action_pressed("ui_cancel"):
+	if not e_pausa and get_tree() and get_tree().paused and evento.is_action_pressed("ui_cancel"):
 		e_pausa = true
 
 	if e_pausa:
@@ -170,7 +177,7 @@ func _unhandled_input(evento: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 
-	if get_tree().paused:
+	if get_tree() and get_tree().paused:
 		return
 
 	var tecla := evento as InputEventKey
@@ -185,11 +192,23 @@ func _unhandled_input(evento: InputEvent) -> void:
 			_nova_rodada()
 
 
-func _ao_mudar_controles(_aparelho: int, _conectado: bool) -> void:
-	# Um controle entrou ou saiu: monta os jogadores de novo e recomeça
-	# (só sem lobby; com lobby, quem joga já foi escolhido lá).
+func _ao_mudar_controles(aparelho: int, conectado: bool) -> void:
+	# Sem lobby, remonta os jogadores; com lobby, pausa se o controle de alguém cair.
 	if not _veio_do_lobby:
 		_nova_partida()
+		return
+	var prefixo := "pad%d" % aparelho
+	var usa_este_pad := false
+	for jogador in _jogadores:
+		if jogador.get("controle", "") == prefixo:
+			usa_este_pad = true
+			break
+	if not usa_este_pad:
+		return
+	if not conectado and not _partida_acabou:
+		_abrir_pausa("Controle %d desconectado!\nReconecte para continuar." % (aparelho + 1))
+	elif conectado and _rotulo_aviso_pausa and _menu_pausa and _menu_pausa.visible:
+		_rotulo_aviso_pausa.text = "Controle %d reconectado!" % (aparelho + 1)
 
 
 ## Escolhe o mapa da rodada. Os mapas saem de uma "sacola" embaralhada: só
@@ -347,6 +366,10 @@ func _montar_tela_fim_partida(hud: CanvasLayer) -> void:
 	)
 	coluna_botoes.add_child(botao_menu)
 
+	var dica_fim := Ui.rotulo("Enter / A para confirmar", 16, Vector2(pos_painel.x, pos_painel.y + alt_painel - 26), larg_painel)
+	dica_fim.add_theme_color_override("font_color", Color(1, 1, 1, 0.72))
+	_tela_fim_partida.add_child(dica_fim)
+
 
 func _desenhar_vencedor() -> void:
 	if _indice_vencedor < 0 or _indice_vencedor >= _jogadores.size():
@@ -407,19 +430,23 @@ func _montar_menu_pausa(hud: CanvasLayer) -> void:
 	_menu_pausa.add_child(cortina)
 
 	var larg_painel := 460.0
-	var alt_painel := 430.0
+	var alt_painel := 475.0
 	var pos_painel := Vector2((TAMANHO.x - larg_painel) / 2.0, (TAMANHO.y - alt_painel) / 2.0)
 	var painel := Ui.painel(Rect2(pos_painel, Vector2(larg_painel, alt_painel)), Ui.AMARELO)
 	painel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_menu_pausa.add_child(painel)
 
-	var titulo := Ui.rotulo("Jogo Pausado", 44, Vector2(pos_painel.x, pos_painel.y + 36), larg_painel)
+	var titulo := Ui.rotulo("Jogo Pausado", 44, Vector2(pos_painel.x, pos_painel.y + 28), larg_painel)
 	titulo.add_theme_color_override("font_color", Ui.AMARELO)
 	_menu_pausa.add_child(titulo)
 
+	_rotulo_aviso_pausa = Ui.rotulo("", 18, Vector2(pos_painel.x + 20.0, pos_painel.y + 84), larg_painel - 40.0)
+	_rotulo_aviso_pausa.add_theme_color_override("font_color", Color(1.0, 0.55, 0.4))
+	_menu_pausa.add_child(_rotulo_aviso_pausa)
+
 	var coluna := VBoxContainer.new()
 	coluna.add_theme_constant_override("separation", 18)
-	coluna.position = Vector2(pos_painel.x + (larg_painel - 340.0) / 2.0, pos_painel.y + 120.0)
+	coluna.position = Vector2(pos_painel.x + (larg_painel - 340.0) / 2.0, pos_painel.y + 142.0)
 	_menu_pausa.add_child(coluna)
 
 	_botao_pausa_continuar = Ui.botao("Continuar", Vector2(340, 68), 30)
@@ -439,6 +466,10 @@ func _montar_menu_pausa(hud: CanvasLayer) -> void:
 		Partida.ir_para(Partida.CENA_MENU)
 	)
 	coluna.add_child(botao_sair)
+
+	var dica_pausa := Ui.rotulo("Enter / A: escolher   |   Esc / B / Start: voltar", 16, Vector2(pos_painel.x, pos_painel.y + alt_painel - 36), larg_painel)
+	dica_pausa.add_theme_color_override("font_color", Color(1, 1, 1, 0.72))
+	_menu_pausa.add_child(dica_pausa)
 
 
 func _criar_rotulo(posicao: Vector2, tamanho_fonte: int, contorno: int) -> Label:
@@ -486,8 +517,12 @@ func _escolher_jogadores() -> void:
 
 func _escrever_ajuda() -> void:
 	var partes := PackedStringArray()
+	var usa_pad := Controles.tem_controle_conectado()
 	for jogador in _jogadores:
-		var como: String = Controles.descricao(jogador["controle"])
+		var controle: String = jogador["controle"]
+		if Controles.eh_pad(controle):
+			usa_pad = true
+		var como: String = Controles.descricao(controle)
 		var bot: String = jogador["bot"]
 		if bot != "":
 			como = "bot " + Partida.NOMES_DIFICULDADE.get(bot, bot).to_lower()
@@ -495,7 +530,7 @@ func _escrever_ajuda() -> void:
 	if not _veio_do_lobby:
 		partes.append("F1: %s" % NOMES_MODO_BOT[_modo_bot])
 		partes.append("F2: próximo mapa")
-	partes.append("Esc: pausa")
+	partes.append("Esc / Start: pausa" if usa_pad else "Esc: pausa")
 	_rotulo_ajuda.text = "(golpe / invisível / língua)    " + "    |    ".join(partes)
 
 
