@@ -26,17 +26,13 @@ const TECLADOS := {
 	},
 }
 
-## Botões do controle (padrão Xbox: A, B, X e o direcional).
+## Botões do controle (padrão Xbox: A, B e X).
 const BOTOES_PAD := {
-	"cima": [JOY_BUTTON_DPAD_UP],
-	"baixo": [JOY_BUTTON_DPAD_DOWN],
-	"esquerda": [JOY_BUTTON_DPAD_LEFT],
-	"direita": [JOY_BUTTON_DPAD_RIGHT],
 	"golpe": [JOY_BUTTON_A],
 	"invisivel": [JOY_BUTTON_B],
 	"lingua": [JOY_BUTTON_X],
 }
-## Eixos do controle: [eixo, sentido]. Analógico esquerdo move.
+## Eixos do controle: [eixo, sentido]. Apenas o analógico esquerdo move.
 const EIXOS_PAD := {
 	"cima": [JOY_AXIS_LEFT_Y, -1.0],
 	"baixo": [JOY_AXIS_LEFT_Y, 1.0],
@@ -95,8 +91,8 @@ func _ready() -> void:
 				evento.button_index = botao
 				if not InputMap.action_has_event(nome, evento):
 					InputMap.action_add_event(nome, evento)
-			if not EIXOS_PAD.has(acao):
-				continue
+		for acao in EIXOS_PAD:
+			var nome := _criar_acao("pad%d_%s" % [pad, acao], ZONA_MORTA)
 			var eixo: Array = EIXOS_PAD[acao]
 			var movimento := InputEventJoypadMotion.new()
 			movimento.device = pad
@@ -207,7 +203,7 @@ const NOMES_TECLADO := {
 	"teclado1": {"golpe": "F", "invisivel": "G", "lingua": "H", "lados": "A/D", "cima_baixo": "W/S"},
 	"teclado2": {"golpe": ".", "invisivel": ",", "lingua": ";", "lados": "direcional", "cima_baixo": "direcional"},
 }
-const NOMES_PAD := {"golpe": "A", "invisivel": "B", "lingua": "X", "pausa": "Start", "lados": "direcional", "cima_baixo": "direcional"}
+const NOMES_PAD := {"golpe": "A", "invisivel": "B", "lingua": "X", "pausa": "Start", "lados": "analógico", "cima_baixo": "analógico"}
 
 
 ## Nome curto do botão de uma ação para mostrar na tela (ex.: "F", ".", "A").

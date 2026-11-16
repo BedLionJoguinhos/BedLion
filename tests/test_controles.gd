@@ -44,6 +44,9 @@ func test_configuracao_gamepad() -> void:
 		"Língua usa exclusivamente o botão X")
 	assert_true(not Controles.EIXOS_PAD.has("lingua") and not Controles.EIXOS_PAD.has("invisivel"),
 		"Gatilhos LT e RT não estão mapeados")
+	assert_true(not Controles.BOTOES_PAD.has("cima") and not Controles.BOTOES_PAD.has("baixo") \
+		and not Controles.BOTOES_PAD.has("esquerda") and not Controles.BOTOES_PAD.has("direita"),
+		"Direcional (D-Pad) não está mapeado para movimentação")
 	assert_true(Controles.MAX_PADS >= 4, "Suporta ao menos 4 controles conectados simultaneamente")
 
 func test_input_map_pads_e_deadzones() -> void:
@@ -55,6 +58,11 @@ func test_input_map_pads_e_deadzones() -> void:
 			var eventos := InputMap.action_get_events(nome)
 			assert_true(eventos.size() > 0 and eventos.all(func(e): return e.device == pad),
 				"Ação '%s' vinculada exclusivamente ao device %d" % [nome, pad])
+
+	for dir in ["cima", "baixo", "esquerda", "direita"]:
+		var evs := InputMap.action_get_events("pad0_%s" % dir)
+		assert_true(evs.all(func(e): return e is InputEventJoypadMotion),
+			"Movimento '%s' aceita exclusivamente o analógico esquerdo" % dir)
 
 	assert_true(is_equal_approx(InputMap.action_get_deadzone("pad0_esquerda"), Controles.ZONA_MORTA),
 		"Ação de movimento usa ZONA_MORTA padrão (0.22)")
