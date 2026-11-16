@@ -89,6 +89,7 @@ var _tempo_tremor := 0.0
 var _menu_pausa: Control
 var _botao_pausa_continuar: Button
 var _rotulo_aviso_pausa: Label
+var _guia_comandos: Control
 var _entrada_pausa: Node
 var _tela_fim_partida: Control
 var _rotulo_vencedor: Label
@@ -449,24 +450,24 @@ func _montar_menu_pausa(hud: CanvasLayer) -> void:
 	cortina.mouse_filter = Control.MOUSE_FILTER_STOP
 	_menu_pausa.add_child(cortina)
 
-	var larg_painel := 460.0
-	var alt_painel := 475.0
+	var larg_painel := 880.0
+	var alt_painel := 510.0
 	var pos_painel := Vector2((TAMANHO.x - larg_painel) / 2.0, (TAMANHO.y - alt_painel) / 2.0)
 	var painel := Ui.painel(Rect2(pos_painel, Vector2(larg_painel, alt_painel)), Ui.AMARELO)
 	painel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_menu_pausa.add_child(painel)
 
-	var titulo := Ui.rotulo("Jogo Pausado", 44, Vector2(pos_painel.x, pos_painel.y + 28), larg_painel)
+	var titulo := Ui.rotulo("Jogo Pausado", 44, Vector2(pos_painel.x, pos_painel.y + 22), larg_painel)
 	titulo.add_theme_color_override("font_color", Ui.AMARELO)
 	_menu_pausa.add_child(titulo)
 
-	_rotulo_aviso_pausa = Ui.rotulo("", 18, Vector2(pos_painel.x + 20.0, pos_painel.y + 84), larg_painel - 40.0)
+	_rotulo_aviso_pausa = Ui.rotulo("", 18, Vector2(pos_painel.x + 20.0, pos_painel.y + 78), larg_painel - 40.0)
 	_rotulo_aviso_pausa.add_theme_color_override("font_color", Color(1.0, 0.55, 0.4))
 	_menu_pausa.add_child(_rotulo_aviso_pausa)
 
 	var coluna := VBoxContainer.new()
 	coluna.add_theme_constant_override("separation", 18)
-	coluna.position = Vector2(pos_painel.x + (larg_painel - 340.0) / 2.0, pos_painel.y + 142.0)
+	coluna.position = Vector2(pos_painel.x + 46.0, pos_painel.y + 146.0)
 	_menu_pausa.add_child(coluna)
 
 	_botao_pausa_continuar = Ui.botao("Continuar", Vector2(340, 68), 30)
@@ -487,9 +488,77 @@ func _montar_menu_pausa(hud: CanvasLayer) -> void:
 	)
 	coluna.add_child(botao_sair)
 
+	_guia_comandos = _montar_guia_comandos(Vector2(pos_painel.x + 422.0, pos_painel.y + 132.0), 412.0, 316.0)
+	_menu_pausa.add_child(_guia_comandos)
+
 	var dica_pausa := Ui.rotulo("Enter / A: escolher   |   Esc / B / Start: voltar", 16, Vector2(pos_painel.x, pos_painel.y + alt_painel - 36), larg_painel)
 	dica_pausa.add_theme_color_override("font_color", Color(1, 1, 1, 0.72))
 	_menu_pausa.add_child(dica_pausa)
+
+
+func _montar_guia_comandos(pos: Vector2, largura: float, altura: float) -> Control:
+	var guia := Control.new()
+	guia.position = pos
+	guia.size = Vector2(largura, altura)
+	guia.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	guia.add_child(Ui.painel(Rect2(Vector2.ZERO, Vector2(largura, altura)), Color(1, 1, 1, 0.25)))
+
+	var cabecalho := Ui.rotulo("Comandos In-Game", 24, Vector2(0, 14), largura)
+	cabecalho.add_theme_color_override("font_color", Ui.AMARELO)
+	guia.add_child(cabecalho)
+
+	var perfis := [
+		{
+			"titulo": "Controle (Xbox)",
+			"linhas": [
+				"Mover: Analógico Esq.   |   Pausa: %s" % Controles.nome_botao("pad0", "pausa"),
+				"Golpe: %s   |   Invisível: %s   |   Língua: %s" % [
+					Controles.nome_botao("pad0", "golpe"),
+					Controles.nome_botao("pad0", "invisivel"),
+					Controles.nome_botao("pad0", "lingua"),
+				],
+			],
+		},
+		{
+			"titulo": "Teclado 1",
+			"linhas": [
+				"Mover: %s / %s" % [Controles.nome_botao("teclado1", "cima_baixo"), Controles.nome_botao("teclado1", "lados")],
+				"Golpe: %s   |   Invisível: %s   |   Língua: %s" % [
+					Controles.nome_botao("teclado1", "golpe"),
+					Controles.nome_botao("teclado1", "invisivel"),
+					Controles.nome_botao("teclado1", "lingua"),
+				],
+			],
+		},
+		{
+			"titulo": "Teclado 2",
+			"linhas": [
+				"Mover: Setas",
+				"Golpe: %s   |   Invisível: %s   |   Língua: %s" % [
+					Controles.nome_botao("teclado2", "golpe"),
+					Controles.nome_botao("teclado2", "invisivel"),
+					Controles.nome_botao("teclado2", "lingua"),
+				],
+			],
+		},
+	]
+
+	var y := 58.0
+	for perfil in perfis:
+		var rotulo_titulo := Ui.rotulo(perfil["titulo"], 18, Vector2(20, y), largura - 40.0)
+		rotulo_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		rotulo_titulo.add_theme_color_override("font_color", Color(0.65, 0.95, 0.55))
+		guia.add_child(rotulo_titulo)
+		y += 24.0
+		for linha in perfil["linhas"]:
+			var rotulo_linha := Ui.rotulo(linha, 16, Vector2(20, y), largura - 40.0)
+			rotulo_linha.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			rotulo_linha.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+			guia.add_child(rotulo_linha)
+			y += 22.0
+		y += 14.0
+
+	return guia
 
 
 func _criar_rotulo(posicao: Vector2, tamanho_fonte: int, contorno: int) -> Label:

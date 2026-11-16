@@ -74,6 +74,16 @@ func test_menu_pausa() -> void:
 	assert_true(vivos.size() > 0 and not vivos[0].can_process(),
 		"Camaleões da partida congelam durante a pausa")
 	assert_true(menu.can_process(), "Menu de pausa permanece interativo enquanto pausado")
+	var guia: Control = main.get("_guia_comandos")
+	assert_true(guia != null and guia.get_parent() == menu,
+		"Guia de comandos in-game está integrado ao menu de pausa")
+	var textos_guia := PackedStringArray()
+	for filho in guia.get_children():
+		if filho is Label:
+			textos_guia.append((filho as Label).text)
+	var conteudo_guia := "\n".join(textos_guia)
+	assert_true(conteudo_guia.contains("Comandos In-Game") and conteudo_guia.contains("Analógico Esq.") and conteudo_guia.contains("Teclado 1"),
+		"Guia de comandos exibe os controles de Xbox e teclado no menu de pausa")
 	
 	main.alternar_pausa()
 	assert_true(not tree.paused, "Despausar restaura o processamento normal (paused = false)")
