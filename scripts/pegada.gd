@@ -5,14 +5,14 @@ extends Node2D
 ## gira ela para o lado em que o camaleão andava.
 
 const DURACAO := 3.0
-const COR := Color(0.36, 0.33, 0.2, 0.8) # cocô de pombo
+const COR := Color(0.36, 0.33, 0.2, 0.8)  # cocô de pombo
 
-var cor := COR # pés molhados de poça usam outra cor (pistas.gd)
+var cor := COR  # pés molhados de poça usam outra cor (pistas.gd)
 var _tempo := 0.0
 
 
 func _ready() -> void:
-	z_index = -2 # no chão, por baixo dos camaleões e dos upgrades
+	z_index = -2  # no chão, por baixo dos camaleões e dos upgrades
 
 
 func _process(delta: float) -> void:
@@ -20,7 +20,7 @@ func _process(delta: float) -> void:
 	if _tempo >= DURACAO:
 		queue_free()
 		return
-	modulate.a = 1.0 - _tempo / DURACAO # vai apagando
+	modulate.a = 1.0 - _tempo / DURACAO  # vai apagando
 
 
 func _draw() -> void:

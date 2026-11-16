@@ -6,7 +6,7 @@ const DURACAO := 0.45
 
 var cor := Color.WHITE
 var _tempo := 0.0
-var _bolinhas: Array = [] # [direção, tamanho]
+var _bolinhas: Array = []  # [direção, tamanho]
 
 
 func _ready() -> void:

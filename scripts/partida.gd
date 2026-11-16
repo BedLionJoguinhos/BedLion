@@ -37,7 +37,7 @@ var quantidade_bots := 0
 var dificuldade_bots := "medio"
 
 ## Configurações.
-var volume := 0.8 # 0 a 1
+var volume := 0.8  # 0 a 1
 var tela_cheia := false
 
 

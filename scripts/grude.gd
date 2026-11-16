@@ -26,12 +26,12 @@ const Mapas := preload("res://scripts/mapas.gd")
 const VERDE := Color(0.55, 0.85, 0.2)
 const CONTORNO := Color(0.08, 0.07, 0.1)
 
-var dono: Node = null # quem soltou (não gruda nele)
+var dono: Node = null  # quem soltou (não gruda nele)
 ## Centros das bolotas, no mundo. Quem cria preenche com pontos_no_caminho().
 var pontos: Array[Vector2] = []
 var _tempo := 0.0
-var _vivas: Array[bool] = [] # bolotas que ainda não pegaram ninguém
-var _tamanhos: Array[float] = [] # raio de cada bolota, sorteado uma vez
+var _vivas: Array[bool] = []  # bolotas que ainda não pegaram ninguém
+var _tamanhos: Array[float] = []  # raio de cada bolota, sorteado uma vez
 
 
 ## Pontos de ESPACO em ESPACO de "de" até "ate", fora da água do mapa.
@@ -46,7 +46,7 @@ static func pontos_no_caminho(de: Vector2, ate: Vector2, mapa: Dictionary) -> Ar
 
 
 func _ready() -> void:
-	z_index = -1 # no chão, por baixo dos camaleões
+	z_index = -1  # no chão, por baixo dos camaleões
 	add_to_group("grudes")
 	for i in pontos.size():
 		_vivas.append(true)
@@ -84,7 +84,7 @@ func _gastar(pes: Vector2) -> void:
 
 
 func _draw() -> void:
-	var alfa := clampf(DURACAO - _tempo, 0.0, 1.0) # vai sumindo no último segundo
+	var alfa := clampf(DURACAO - _tempo, 0.0, 1.0)  # vai sumindo no último segundo
 	# "Ploft": as bolotas caem uma depois da outra, da boca até a ponta.
 	var escalas: Array[float] = []
 	for i in pontos.size():

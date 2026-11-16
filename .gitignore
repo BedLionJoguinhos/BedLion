@@ -5,3 +5,6 @@
 export.cfg
 export_credentials.cfg
 bin/
+coverage/
+review/
+*.lcov

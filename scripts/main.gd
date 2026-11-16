@@ -28,7 +28,7 @@ const ESPESSURA_PAREDE := 40.0
 
 ## Pontos para ganhar a partida (cada rodada vale 1 ponto para quem sobrar vivo).
 const PONTOS_PARA_VENCER := 5
-const PAUSA_FIM_RODADA := 2.0 # segundos mostrando quem ganhou a rodada
+const PAUSA_FIM_RODADA := 2.0  # segundos mostrando quem ganhou a rodada
 const PAUSA_FIM_PARTIDA := 4.0
 
 ## Tremor suave de tela na morte (kill) de um jogador ou bot.
@@ -51,11 +51,11 @@ const TEMPO_NOME_MAPA := 1.8
 ## cada número abaixo é quantos segundos depois do começo da rodada um aparece.
 ## Depois do último não aparece mais nenhum naquela rodada.
 const TEMPOS_UPGRADE: Array[float] = [5.0, 10.0]
-const MAX_UPGRADES := 2 # quantos podem estar no chão ao mesmo tempo
+const MAX_UPGRADES := 2  # quantos podem estar no chão ao mesmo tempo
 
 ## Cocô de pombo (coco_pombo.gd) cai num lugar sorteado de tempos em tempos.
-const INTERVALO_COCO := 4.0 # segundos entre um cocô e outro
-const MAX_COCOS := 4 # quantos podem estar no mapa ao mesmo tempo
+const INTERVALO_COCO := 4.0  # segundos entre um cocô e outro
+const MAX_COCOS := 4  # quantos podem estar no mapa ao mesmo tempo
 
 ## Visual de cada vaga de jogador, na ordem em que entram. Onde cada um
 ## começa depende do mapa ("inicios" em mapas.gd).
@@ -67,12 +67,12 @@ const VAGAS := [
 ]
 
 var placar: Array = []
-var _jogadores: Array = [] # cada um: {"nome", "cor", "controle", "bot"}
-var _veio_do_lobby := false # quem joga foi escolhido no lobby (aí F1 e controles novos não mudam nada)
-var _indice_mapa := -1 # qual dos Mapas.MAPAS está em jogo
-var _proximos_mapas: Array = [] # índices que ainda vão sair nesta volta (embaralhados)
+var _jogadores: Array = []  # cada um: {"nome", "cor", "controle", "bot"}
+var _veio_do_lobby := false  # quem joga foi escolhido no lobby (aí F1 e controles novos não mudam nada)
+var _indice_mapa := -1  # qual dos Mapas.MAPAS está em jogo
+var _proximos_mapas: Array = []  # índices que ainda vão sair nesta volta (embaralhados)
 var _mapa: Dictionary = {}
-var _arena: Node2D # desenho e paredes do mapa atual (trocado a cada rodada)
+var _arena: Node2D  # desenho e paredes do mapa atual (trocado a cada rodada)
 var _modo_bot := 0
 var _rodada: Node2D
 var _numero_rodada := 0
@@ -99,7 +99,8 @@ var _botao_fim_reiniciar: Button
 var _indice_vencedor := -1
 
 
-class _EntradaPausa extends Node:
+class _EntradaPausa:
+	extends Node
 	var _dono: Node
 
 	func _init(dono: Node) -> void:
@@ -249,7 +250,7 @@ func _trocar_mapa() -> void:
 ## capim alto e paredes.
 func _montar_arena() -> void:
 	if _arena:
-		remove_child(_arena) # tira as paredes antigas na hora
+		remove_child(_arena)  # tira as paredes antigas na hora
 		_arena.queue_free()
 	_arena = Node2D.new()
 	add_child(_arena)
@@ -366,24 +367,27 @@ func _montar_tela_fim_partida(hud: CanvasLayer) -> void:
 	_tela_fim_partida.add_child(coluna_botoes)
 
 	_botao_fim_reiniciar = Ui.botao("Jogar Novamente", Vector2(360, 64), 30)
-	_botao_fim_reiniciar.pressed.connect(func() -> void:
-		_ocultar_fim_partida()
-		_nova_partida()
+	_botao_fim_reiniciar.pressed.connect(
+		func() -> void:
+			_ocultar_fim_partida()
+			_nova_partida()
 	)
 	coluna_botoes.add_child(_botao_fim_reiniciar)
 
 	if _veio_do_lobby:
 		var botao_lobby := Ui.botao("Voltar ao Lobby", Vector2(360, 56), 26)
-		botao_lobby.pressed.connect(func() -> void:
-			_ocultar_fim_partida()
-			Partida.ir_para(Partida.CENA_LOBBY)
+		botao_lobby.pressed.connect(
+			func() -> void:
+				_ocultar_fim_partida()
+				Partida.ir_para(Partida.CENA_LOBBY)
 		)
 		coluna_botoes.add_child(botao_lobby)
 
 	var botao_menu := Ui.botao("Menu Principal", Vector2(360, 56) if _veio_do_lobby else Vector2(360, 64), 26)
-	botao_menu.pressed.connect(func() -> void:
-		_ocultar_fim_partida()
-		Partida.ir_para(Partida.CENA_MENU)
+	botao_menu.pressed.connect(
+		func() -> void:
+			_ocultar_fim_partida()
+			Partida.ir_para(Partida.CENA_MENU)
 	)
 	coluna_botoes.add_child(botao_menu)
 
@@ -397,8 +401,7 @@ func _desenhar_vencedor() -> void:
 		return
 	var cor: Color = _jogadores[_indice_vencedor]["cor"]
 	_desenho_vencedor.draw_set_transform(Vector2.ZERO)
-	Desenho.desenhar(_desenho_vencedor, Transform2D(0.0, Vector2.ONE * 3.6, 0.0, Vector2.ZERO),
-		cor, Vector2.RIGHT, true, 0.0)
+	Desenho.desenhar(_desenho_vencedor, Transform2D(0.0, Vector2.ONE * 3.6, 0.0, Vector2.ZERO), cor, Vector2.RIGHT, true, 0.0)
 	_desenho_vencedor.draw_set_transform(Vector2.ZERO)
 
 
@@ -418,7 +421,7 @@ func _exibir_fim_partida(vencedor: int) -> void:
 
 	for i in _jogadores.size():
 		var j: Dictionary = _jogadores[i]
-		var eh_vencedor := (i == vencedor)
+		var eh_vencedor := i == vencedor
 		var texto := "%s: %d pontos" % [j["nome"], placar[i]]
 		if str(j.get("bot", "")) != "":
 			texto += " (bot)"
@@ -475,16 +478,18 @@ func _montar_menu_pausa(hud: CanvasLayer) -> void:
 	coluna.add_child(_botao_pausa_continuar)
 
 	var botao_reiniciar := Ui.botao("Reiniciar Rodada", Vector2(340, 68), 28)
-	botao_reiniciar.pressed.connect(func() -> void:
-		_fechar_pausa()
-		_nova_rodada()
+	botao_reiniciar.pressed.connect(
+		func() -> void:
+			_fechar_pausa()
+			_nova_rodada()
 	)
 	coluna.add_child(botao_reiniciar)
 
 	var botao_sair := Ui.botao("Sair para o Menu", Vector2(340, 68), 28)
-	botao_sair.pressed.connect(func() -> void:
-		_fechar_pausa()
-		Partida.ir_para(Partida.CENA_MENU)
+	botao_sair.pressed.connect(
+		func() -> void:
+			_fechar_pausa()
+			Partida.ir_para(Partida.CENA_MENU)
 	)
 	coluna.add_child(botao_sair)
 
@@ -510,35 +515,47 @@ func _montar_guia_comandos(pos: Vector2, largura: float, altura: float) -> Contr
 	var perfis := [
 		{
 			"titulo": "Controle (Xbox)",
-			"linhas": [
+			"linhas":
+			[
 				"Mover: Analógico Esq.   |   Pausa: %s" % Controles.nome_botao("pad0", "pausa"),
-				"Golpe: %s   |   Invisível: %s   |   Língua: %s" % [
-					Controles.nome_botao("pad0", "golpe"),
-					Controles.nome_botao("pad0", "invisivel"),
-					Controles.nome_botao("pad0", "lingua"),
-				],
+				(
+					"Golpe: %s   |   Invisível: %s   |   Língua: %s"
+					% [
+						Controles.nome_botao("pad0", "golpe"),
+						Controles.nome_botao("pad0", "invisivel"),
+						Controles.nome_botao("pad0", "lingua"),
+					]
+				),
 			],
 		},
 		{
 			"titulo": "Teclado 1",
-			"linhas": [
+			"linhas":
+			[
 				"Mover: %s / %s" % [Controles.nome_botao("teclado1", "cima_baixo"), Controles.nome_botao("teclado1", "lados")],
-				"Golpe: %s   |   Invisível: %s   |   Língua: %s" % [
-					Controles.nome_botao("teclado1", "golpe"),
-					Controles.nome_botao("teclado1", "invisivel"),
-					Controles.nome_botao("teclado1", "lingua"),
-				],
+				(
+					"Golpe: %s   |   Invisível: %s   |   Língua: %s"
+					% [
+						Controles.nome_botao("teclado1", "golpe"),
+						Controles.nome_botao("teclado1", "invisivel"),
+						Controles.nome_botao("teclado1", "lingua"),
+					]
+				),
 			],
 		},
 		{
 			"titulo": "Teclado 2",
-			"linhas": [
+			"linhas":
+			[
 				"Mover: Setas",
-				"Golpe: %s   |   Invisível: %s   |   Língua: %s" % [
-					Controles.nome_botao("teclado2", "golpe"),
-					Controles.nome_botao("teclado2", "invisivel"),
-					Controles.nome_botao("teclado2", "lingua"),
-				],
+				(
+					"Golpe: %s   |   Invisível: %s   |   Língua: %s"
+					% [
+						Controles.nome_botao("teclado2", "golpe"),
+						Controles.nome_botao("teclado2", "invisivel"),
+						Controles.nome_botao("teclado2", "lingua"),
+					]
+				),
 			],
 		},
 	]
@@ -589,7 +606,7 @@ func _escolher_jogadores() -> void:
 	var quantidade := controles.size()
 	if modo != "":
 		quantidade = MAX_JOGADORES
-	quantidade = maxi(quantidade, 2) # com uma pessoa só, entra um bot parado
+	quantidade = maxi(quantidade, 2)  # com uma pessoa só, entra um bot parado
 
 	_jogadores.clear()
 	for i in quantidade:
@@ -641,10 +658,10 @@ func _nova_rodada() -> void:
 		remove_child(_rodada)
 		_rodada.queue_free()
 	_rodada = Node2D.new()
-	_rodada.y_sort_enabled = true # quem está mais embaixo aparece na frente
+	_rodada.y_sort_enabled = true  # quem está mais embaixo aparece na frente
 	add_child(_rodada)
 	_trocar_mapa()
-	var pistas := Pistas.new() # ondinhas e pegadas molhadas (pistas.gd)
+	var pistas := Pistas.new()  # ondinhas e pegadas molhadas (pistas.gd)
 	pistas.mapa = _mapa
 	_rodada.add_child(pistas)
 	_numero_rodada += 1
@@ -675,6 +692,8 @@ func _nova_rodada() -> void:
 		var camaleao := Camaleao.new()
 		camaleao.controle = dados["controle"]
 		camaleao.bot = dados["bot"]
+		# Sem o teclado 2 na partida, as setas ficam livres para o teclado 1 mirar.
+		camaleao.mira_com_setas = dados["controle"] == "teclado1" and not _tem_teclado2()
 		camaleao.cor = dados["cor"]
 		camaleao.position = inicio
 		camaleao.direcao = Vector2.RIGHT if inicio.x < TAMANHO.x / 2.0 else Vector2.LEFT
@@ -684,6 +703,13 @@ func _nova_rodada() -> void:
 		camaleao.morreu.connect(_ao_morrer)
 		_rodada.add_child(camaleao)
 		_vivos.append(camaleao)
+
+
+func _tem_teclado2() -> bool:
+	for dados in _jogadores:
+		if dados["controle"] == "teclado2":
+			return true
+	return false
 
 
 func _spawnar_upgrade() -> void:
@@ -761,8 +787,7 @@ func _encerrar_rodada(rodada: int) -> void:
 				return
 			_exibir_fim_partida(vencedor)
 			return
-		else:
-			_mostrar_mensagem("%s ganhou a rodada!" % nome, PAUSA_FIM_RODADA)
+		_mostrar_mensagem("%s ganhou a rodada!" % nome, PAUSA_FIM_RODADA)
 	else:
 		_mostrar_mensagem("Empate!", PAUSA_FIM_RODADA)
 	_atualizar_placar()
@@ -784,9 +809,10 @@ func _mostrar_texto(rotulo: Label, texto: String, duracao: float) -> void:
 		return
 	rotulo.text = texto
 	var tempo := _criar_temporizador(duracao)
-	tempo.timeout.connect(func() -> void:
-		if is_instance_valid(rotulo) and rotulo.text == texto:
-			rotulo.text = ""
+	tempo.timeout.connect(
+		func() -> void:
+			if is_instance_valid(rotulo) and rotulo.text == texto:
+				rotulo.text = ""
 	)
 
 

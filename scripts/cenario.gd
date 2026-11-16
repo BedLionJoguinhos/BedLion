@@ -18,9 +18,9 @@ const COR_GRAMA := Color(0.47, 0.63, 0.30)
 const COR_CERCA := Color(0.20, 0.45, 0.22)
 const COR_PEDRA := Color(0.62, 0.60, 0.56)
 const COR_CONTORNO := Color(0.12, 0.1, 0.1)
-const ALTURA_PEDRA := 12.0 # faixa mais escura embaixo que dá ideia de altura
+const ALTURA_PEDRA := 12.0  # faixa mais escura embaixo que dá ideia de altura
 const CORES_FLORES := [Color(1.0, 0.95, 0.85), Color(1.0, 0.85, 0.3), Color(0.95, 0.5, 0.6), Color(0.7, 0.6, 1.0)]
-const COR_BEIRADA := Color(0.58, 0.50, 0.33) # terra molhada em volta da água
+const COR_BEIRADA := Color(0.58, 0.50, 0.33)  # terra molhada em volta da água
 const COR_AGUA_FUNDA := Color(0.16, 0.42, 0.62)
 const COR_AGUA := Color(0.25, 0.58, 0.78)
 const COR_AGUA_RASA := Color(0.38, 0.70, 0.85)
@@ -33,10 +33,10 @@ const COR_POCA := Color(0.42, 0.62, 0.72, 0.85)
 
 var tamanho := Vector2(1280, 720)
 var espessura := 32.0
-var mapa: Dictionary = {} # um dos mapas de mapas.gd
-var obstaculos: Array = [] # Rect2 dos blocos do meio (vêm do mapa)
-var aguas: Array = [] # Rect2 dos lagos e rios
-var pontes: Array = [] # Rect2 das pontes
+var mapa: Dictionary = {}  # um dos mapas de mapas.gd
+var obstaculos: Array = []  # Rect2 dos blocos do meio (vêm do mapa)
+var aguas: Array = []  # Rect2 dos lagos e rios
+var pontes: Array = []  # Rect2 das pontes
 
 
 func _ready() -> void:
@@ -73,7 +73,7 @@ func _desenhar_chao(rng: RandomNumberGenerator) -> void:
 			var ladrilho := Rect2(coluna * LADRILHO + 1.5, linha * LADRILHO + 1.5, LADRILHO - 3.0, LADRILHO - 3.0)
 			draw_rect(ladrilho, cor)
 			draw_line(ladrilho.position, Vector2(ladrilho.end.x, ladrilho.position.y), cor.lightened(0.08), 2.0)
-			if rng.randf() < 0.15: # rachadura
+			if rng.randf() < 0.15:  # rachadura
 				var inicio := ladrilho.position + Vector2(rng.randf_range(8, 56), rng.randf_range(8, 56))
 				var meio := inicio + Vector2(rng.randf_range(-12, 12), rng.randf_range(-12, 12))
 				var fim := meio + Vector2(rng.randf_range(-10, 10), rng.randf_range(-10, 10))
@@ -104,8 +104,7 @@ func _desenhar_enfeites(rng: RandomNumberGenerator) -> void:
 	var total := int(90 * _proporcao_area())
 	while colocados < total and tentativas < 2000:
 		tentativas += 1
-		var ponto := Vector2(rng.randf_range(espessura + 10, tamanho.x - espessura - 10),
-			rng.randf_range(espessura + 10, tamanho.y - espessura - 10))
+		var ponto := Vector2(rng.randf_range(espessura + 10, tamanho.x - espessura - 10), rng.randf_range(espessura + 10, tamanho.y - espessura - 10))
 		if _dentro_de_obstaculo(ponto, 12.0) or not Mapas.lugar_livre(mapa, ponto, LARGURA_BEIRADA + 4.0):
 			continue
 		colocados += 1
@@ -167,10 +166,11 @@ func _desenhar_agua(rng: RandomNumberGenerator) -> void:
 			var giro := rng.randf() * TAU
 			draw_circle(ponto, raio + 1.5, COR_FOLHA_LAGO.darkened(0.45))
 			draw_circle(ponto, raio, COR_FOLHA_LAGO.lightened(rng.randf_range(-0.05, 0.1)))
-			var corte := PackedVector2Array([ponto, ponto + Vector2.from_angle(giro - 0.35) * (raio + 2.0),
-				ponto + Vector2.from_angle(giro + 0.35) * (raio + 2.0)])
+			var corte := PackedVector2Array(
+				[ponto, ponto + Vector2.from_angle(giro - 0.35) * (raio + 2.0), ponto + Vector2.from_angle(giro + 0.35) * (raio + 2.0)]
+			)
 			draw_colored_polygon(corte, COR_AGUA)
-			if rng.randf() < 0.4: # florzinha
+			if rng.randf() < 0.4:  # florzinha
 				draw_circle(ponto + Vector2.from_angle(giro + PI) * raio * 0.4, 3.5, Color(1.0, 0.75, 0.85))
 				draw_circle(ponto + Vector2.from_angle(giro + PI) * raio * 0.4, 1.5, Color(1.0, 0.9, 0.4))
 
@@ -190,10 +190,8 @@ func _desenhar_pocas() -> void:
 func _ponto_na_agua(retangulo: Rect2, rng: RandomNumberGenerator, folga: float) -> Vector2:
 	var dentro := Rect2(Vector2.ONE * (espessura + 30.0), tamanho - Vector2.ONE * (espessura + 30.0) * 2.0)
 	for _tentativa in 30:
-		var ponto := Vector2(rng.randf_range(retangulo.position.x, retangulo.end.x),
-			rng.randf_range(retangulo.position.y, retangulo.end.y))
-		if dentro.has_point(ponto) and Mapas.dentro_arredondado(retangulo, ponto, folga) \
-				and Mapas.na_agua(mapa, ponto) and not _perto_de_ponte(ponto, 20.0):
+		var ponto := Vector2(rng.randf_range(retangulo.position.x, retangulo.end.x), rng.randf_range(retangulo.position.y, retangulo.end.y))
+		if dentro.has_point(ponto) and Mapas.dentro_arredondado(retangulo, ponto, folga) and Mapas.na_agua(mapa, ponto) and not _perto_de_ponte(ponto, 20.0):
 			return ponto
 	return Vector2.INF
 
@@ -222,12 +220,11 @@ func _forma_arredondada(retangulo: Rect2, crescer: float, cor: Color) -> void:
 
 ## Ponte de tábuas. As tábuas ficam atravessadas no sentido de quem anda nela.
 func _desenhar_ponte(retangulo: Rect2) -> void:
-	var deitada := retangulo.size.x >= retangulo.size.y # anda-se na horizontal
+	var deitada := retangulo.size.x >= retangulo.size.y  # anda-se na horizontal
 	# Sombra na água.
 	draw_rect(Rect2(retangulo.position + Vector2(5, 8), retangulo.size), Color(0, 0, 0, 0.25))
 	# Postes nos quatro cantos.
-	for canto in [retangulo.position, Vector2(retangulo.end.x, retangulo.position.y),
-			Vector2(retangulo.position.x, retangulo.end.y), retangulo.end]:
+	for canto in [retangulo.position, Vector2(retangulo.end.x, retangulo.position.y), Vector2(retangulo.position.x, retangulo.end.y), retangulo.end]:
 		draw_circle(canto, 8.0, COR_CONTORNO)
 		draw_circle(canto, 6.0, COR_MADEIRA.darkened(0.35))
 	_caixa_reta(retangulo, COR_MADEIRA, 2)
@@ -247,11 +244,13 @@ func _desenhar_ponte(retangulo: Rect2) -> void:
 	var grossura := 7.0
 	var lados: Array = []
 	if deitada:
-		lados = [Rect2(retangulo.position, Vector2(retangulo.size.x, grossura)),
-			Rect2(retangulo.position.x, retangulo.end.y - grossura, retangulo.size.x, grossura)]
+		lados = [
+			Rect2(retangulo.position, Vector2(retangulo.size.x, grossura)), Rect2(retangulo.position.x, retangulo.end.y - grossura, retangulo.size.x, grossura)
+		]
 	else:
-		lados = [Rect2(retangulo.position, Vector2(grossura, retangulo.size.y)),
-			Rect2(retangulo.end.x - grossura, retangulo.position.y, grossura, retangulo.size.y)]
+		lados = [
+			Rect2(retangulo.position, Vector2(grossura, retangulo.size.y)), Rect2(retangulo.end.x - grossura, retangulo.position.y, grossura, retangulo.size.y)
+		]
 	for lado in lados:
 		_caixa_reta(lado, COR_MADEIRA.darkened(0.25), 2)
 
@@ -293,8 +292,10 @@ func _desenhar_bloco(retangulo: Rect2, rng: RandomNumberGenerator) -> void:
 func _desenhar_cerca(rng: RandomNumberGenerator) -> void:
 	var e := espessura
 	var faixas := [
-		Rect2(0, 0, tamanho.x, e), Rect2(0, tamanho.y - e, tamanho.x, e),
-		Rect2(0, 0, e, tamanho.y), Rect2(tamanho.x - e, 0, e, tamanho.y),
+		Rect2(0, 0, tamanho.x, e),
+		Rect2(0, tamanho.y - e, tamanho.x, e),
+		Rect2(0, 0, e, tamanho.y),
+		Rect2(tamanho.x - e, 0, e, tamanho.y),
 	]
 	for faixa in faixas:
 		draw_rect(faixa, COR_CERCA.darkened(0.3))
@@ -316,7 +317,7 @@ func _desenhar_cerca(rng: RandomNumberGenerator) -> void:
 		draw_circle(folhas[i], raios[i], COR_CERCA.lightened(rng.randf_range(-0.05, 0.08)))
 	for i in folhas.size():
 		draw_circle(folhas[i] + Vector2(-3, -4), raios[i] * 0.45, Color(1, 1, 1, 0.12))
-		if rng.randf() < 0.08: # frutinha
+		if rng.randf() < 0.08:  # frutinha
 			draw_circle(folhas[i] + Vector2(rng.randf_range(-6, 6), rng.randf_range(-6, 6)), 2.5, Color(0.9, 0.25, 0.3))
 
 

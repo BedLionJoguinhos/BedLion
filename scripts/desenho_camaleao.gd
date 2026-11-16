@@ -17,8 +17,7 @@ const PES := Vector2(0, 18)
 ## base: posição e escala do camaleão dentro do item.
 ## mira: direção para onde ele olha e aponta a mão.
 ## passo: fase da animação de andar (0 = parado).
-static func desenhar(item: CanvasItem, base: Transform2D, cor: Color, mira: Vector2,
-		olhando_direita: bool, passo: float) -> void:
+static func desenhar(item: CanvasItem, base: Transform2D, cor: Color, mira: Vector2, olhando_direita: bool, passo: float) -> void:
 	var lado := 1.0 if olhando_direita else -1.0
 	var escuro := cor.darkened(0.3)
 	var claro := cor.lightened(0.4)
@@ -35,25 +34,47 @@ static func desenhar(item: CanvasItem, base: Transform2D, cor: Color, mira: Vect
 	item.draw_set_transform_matrix(corpo)
 
 	_cauda(item, cor)
-	_forma(item, _elipse(Vector2(-5, 19), Vector2(6, 3.5)), escuro) # pé de trás
-	_forma(item, _elipse(Vector2(0, 5), Vector2(12, 14)), cor) # corpo
-	item.draw_colored_polygon(_elipse(Vector2(4, 9), Vector2(6.5, 8.5)), claro) # barriga
-	for i in 3: # listras nas costas
+	_forma(item, _elipse(Vector2(-5, 19), Vector2(6, 3.5)), escuro)  # pé de trás
+	_forma(item, _elipse(Vector2(0, 5), Vector2(12, 14)), cor)  # corpo
+	item.draw_colored_polygon(_elipse(Vector2(4, 9), Vector2(6.5, 8.5)), claro)  # barriga
+	for i in 3:  # listras nas costas
 		item.draw_arc(Vector2(-3.0 + i, -2.0 + i * 6.0), 5.0, PI * 0.75, PI * 1.25, 6, escuro, 1.5, true)
-	_forma(item, _elipse(Vector2(7, 19), Vector2(7, 3.5)), cor) # pé da frente
+	_forma(item, _elipse(Vector2(7, 19), Vector2(7, 3.5)), cor)  # pé da frente
 
 	# Crista atrás da cabeça (a cabeça cobre a parte de baixo dela).
-	_forma(item, PackedVector2Array([
-		Vector2(-8, -16), Vector2(-4, -24), Vector2(3, -25.5), Vector2(7, -21),
-	]), escuro)
-	_forma(item, _elipse(Vector2(5, -12), Vector2(13, 11)), cor) # cabeça
-	_forma(item, _elipse(Vector2(16, -6.5), Vector2(6, 4.5)), cor) # beiço
-	item.draw_polyline(PackedVector2Array([
-		Vector2(9, -5), Vector2(13, -4), Vector2(18, -5.5), Vector2(21.5, -7),
-	]), CONTORNO, 1.5, true) # sorriso
+	_forma(
+		item,
+		PackedVector2Array(
+			[
+				Vector2(-8, -16),
+				Vector2(-4, -24),
+				Vector2(3, -25.5),
+				Vector2(7, -21),
+			]
+		),
+		escuro
+	)
+	_forma(item, _elipse(Vector2(5, -12), Vector2(13, 11)), cor)  # cabeça
+	_forma(item, _elipse(Vector2(16, -6.5), Vector2(6, 4.5)), cor)  # beiço
+	(
+		item
+		. draw_polyline(
+			PackedVector2Array(
+				[
+					Vector2(9, -5),
+					Vector2(13, -4),
+					Vector2(18, -5.5),
+					Vector2(21.5, -7),
+				]
+			),
+			CONTORNO,
+			1.5,
+			true
+		)
+	)  # sorriso
 
-	_olho(item, Vector2(16, -15.5), 4.5, cor, mira_local) # olho de longe
-	_olho(item, Vector2(5, -14), 6.5, cor, mira_local) # olho de perto
+	_olho(item, Vector2(16, -15.5), 4.5, cor, mira_local)  # olho de longe
+	_olho(item, Vector2(5, -14), 6.5, cor, mira_local)  # olho de perto
 
 	# Braço e mão.
 	var ombro := Vector2(3, 3)

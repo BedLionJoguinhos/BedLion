@@ -13,18 +13,18 @@ const TEMPO_NO_CHAO := 15.0
 const TEMPO_PEGADAS := 6.0
 ## Distância (do centro do camaleão ao centro do cocô) para contar como pisada.
 const RAIO_PISAR := 24.0
-const ALTURA_QUEDA := 260.0 # de onde o cocô vem caindo, só no desenho
+const ALTURA_QUEDA := 260.0  # de onde o cocô vem caindo, só no desenho
 
 const BRANCO := Color(0.97, 0.96, 0.9)
 const MIOLO := Color(0.42, 0.42, 0.25)
 const CONTORNO := Color(0.08, 0.07, 0.1)
 
 var _tempo := 0.0
-var _formato: Array = [] # bolinhas do "splat", sorteadas uma vez
+var _formato: Array = []  # bolinhas do "splat", sorteadas uma vez
 
 
 func _ready() -> void:
-	z_index = -1 # no chão, por baixo dos camaleões
+	z_index = -1  # no chão, por baixo dos camaleões
 	add_to_group("cocos")
 	for i in 6:
 		var angulo := TAU * i / 6.0 + randf_range(-0.3, 0.3)
@@ -78,7 +78,7 @@ func _desenhar_aviso(t: float) -> void:
 	draw_circle(Vector2.ZERO, raio, Color(0, 0, 0, lerpf(0.1, 0.45, t)))
 	draw_set_transform(Vector2.ZERO)
 	if t > 0.6:
-		var queda := (t - 0.6) / 0.4 # 0 = lá em cima, 1 = no chão
+		var queda := (t - 0.6) / 0.4  # 0 = lá em cima, 1 = no chão
 		var altura := ALTURA_QUEDA * (1.0 - queda * queda)
 		var gota := Vector2(0, -altura)
 		draw_circle(gota, 6.5, CONTORNO)

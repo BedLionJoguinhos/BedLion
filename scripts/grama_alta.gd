@@ -128,15 +128,15 @@ static var _cache: Dictionary = {}
 
 var mapa: Dictionary = {}
 var _tempo := 0.0
-var _atras: Node2D # desenha as folhas que estão atrás de algum camaleão (por baixo dele)
+var _atras: Node2D  # desenha as folhas que estão atrás de algum camaleão (por baixo dele)
 var _material_frente: ShaderMaterial
 var _material_tras: ShaderMaterial
 var _malha: ArrayMesh
 
 var _bases := PackedVector2Array()
-var _areas: Array[Rect2] = [] # área de cada bloco em que os pés afetam as folhas
+var _areas: Array[Rect2] = []  # área de cada bloco em que os pés afetam as folhas
 var _folhas_do_bloco: Array[PackedInt32Array] = []
-var _tem_dobra := PackedByteArray() # por bloco: alguma folha ainda deitada?
+var _tem_dobra := PackedByteArray()  # por bloco: alguma folha ainda deitada?
 ## Por folha, 4 floats (o texel): dobra, atrás (0 ou 1), 0, 0.
 var _dados := PackedFloat32Array()
 var _imagem_dobras: Image
@@ -145,7 +145,7 @@ var _linhas_textura := 1
 
 
 func _ready() -> void:
-	z_index = 1 # por cima dos camaleões
+	z_index = 1  # por cima dos camaleões
 	var plano := _plano(mapa)
 	_bases = plano["bases"]
 	if _bases.is_empty():
@@ -160,8 +160,7 @@ func _ready() -> void:
 
 	_dados.resize(LARGURA_TEXTURA * _linhas_textura * 4)
 	_dados.fill(0.0)
-	_imagem_dobras = Image.create_from_data(LARGURA_TEXTURA, _linhas_textura, false,
-		Image.FORMAT_RGBAF, _dados.to_byte_array())
+	_imagem_dobras = Image.create_from_data(LARGURA_TEXTURA, _linhas_textura, false, Image.FORMAT_RGBAF, _dados.to_byte_array())
 	_textura_dobras = ImageTexture.create_from_image(_imagem_dobras)
 
 	_material_frente = _criar_material(plano["fixos"], false)
@@ -169,7 +168,7 @@ func _ready() -> void:
 	material = _material_frente
 
 	_atras = Node2D.new()
-	_atras.z_index = -2 # 1 - 2 = -1: por baixo dos camaleões
+	_atras.z_index = -2  # 1 - 2 = -1: por baixo dos camaleões
 	_atras.material = _material_tras
 	_atras.visible = false
 	_atras.draw.connect(_desenhar_malha.bind(_atras))
@@ -267,8 +266,7 @@ func _process(delta: float) -> void:
 		_tem_dobra[b] = 1 if ainda_dobrado else 0
 
 	if mudou:
-		_imagem_dobras.set_data(LARGURA_TEXTURA, _linhas_textura, false, Image.FORMAT_RGBAF,
-			_dados.to_byte_array())
+		_imagem_dobras.set_data(LARGURA_TEXTURA, _linhas_textura, false, Image.FORMAT_RGBAF, _dados.to_byte_array())
 		_textura_dobras.update(_imagem_dobras)
 	# A camada de trás só desenha quando tem alguém no meio do capim.
 	_atras.visible = algum_atras
@@ -298,12 +296,10 @@ static func _plano(dados_mapa: Dictionary) -> Dictionary:
 	for item in dados_mapa.get("grama", []):
 		var retangulo: Rect2 = item
 		# Área dentro da qual os pés de um camaleão ou casca podem afetar as folhas deste bloco
-		areas.append(Rect2(retangulo.position.x - 30.0, retangulo.position.y - 30.0,
-			retangulo.size.x + 60.0, retangulo.size.y + 90.0))
+		areas.append(Rect2(retangulo.position.x - 30.0, retangulo.position.y - 30.0, retangulo.size.x + 60.0, retangulo.size.y + 90.0))
 		var quantidade := int(retangulo.get_area() / AREA_POR_FOLHA)
 		for i in quantidade:
-			var base := Vector2(rng.randf_range(retangulo.position.x, retangulo.end.x),
-				rng.randf_range(retangulo.position.y, retangulo.end.y))
+			var base := Vector2(rng.randf_range(retangulo.position.x, retangulo.end.x), rng.randf_range(retangulo.position.y, retangulo.end.y))
 			if not Mapas.dentro_arredondado(retangulo, base, 4.0):
 				continue
 			# Folhas da borda são mais baixas, para o capim ter um contorno macio.
@@ -343,8 +339,7 @@ static func _plano(dados_mapa: Dictionary) -> Dictionary:
 		"fixos": null,
 	}
 	if n > 0:
-		var imagem := Image.create_from_data(LARGURA_TEXTURA, linhas, false, Image.FORMAT_RGBAF,
-			fixos.to_byte_array())
+		var imagem := Image.create_from_data(LARGURA_TEXTURA, linhas, false, Image.FORMAT_RGBAF, fixos.to_byte_array())
 		plano["fixos"] = ImageTexture.create_from_image(imagem)
 		plano["malha"] = _montar_malha(folhas)
 	_cache[chave] = plano
@@ -366,7 +361,7 @@ static func _montar_malha(folhas: Array) -> ArrayMesh:
 	cores.resize(total)
 
 	var v := 0
-	for passada in 2: # 0 = contorno, 1 = folha
+	for passada in 2:  # 0 = contorno, 1 = folha
 		for i in n:
 			var folha: Array = folhas[i]
 			var base: Vector2 = folha[0]
@@ -376,7 +371,7 @@ static func _montar_malha(folhas: Array) -> ArrayMesh:
 				for k in VERTICES_POR_TRACO:
 					vertices[v] = base
 					cores[v] = cor
-					uvs[v] = Vector2(i, codigo_traco + k) # k = linha * 4 + coluna
+					uvs[v] = Vector2(i, codigo_traco + k)  # k = linha * 4 + coluna
 					v += 1
 
 	# Grade 4x4 de cada traço: 9 quadradinhos, 2 triângulos cada. Nos cantos a
@@ -408,6 +403,5 @@ static func _montar_malha(folhas: Array) -> ArrayMesh:
 	arrays[Mesh.ARRAY_COLOR] = cores
 	arrays[Mesh.ARRAY_INDEX] = indices
 	var malha := ArrayMesh.new()
-	malha.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {},
-		Mesh.ARRAY_FLAG_USE_2D_VERTICES)
+	malha.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, Mesh.ARRAY_FLAG_USE_2D_VERTICES)
 	return malha
