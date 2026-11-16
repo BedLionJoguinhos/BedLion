@@ -26,14 +26,14 @@ const TECLADOS := {
 	},
 }
 
-## Botões do controle (padrão Xbox: A, B/Y, X, LB, RB e o direcional).
+## Botões do controle (padrão Xbox: A, B, X, LB, RB e o direcional).
 const BOTOES_PAD := {
 	"cima": [JOY_BUTTON_DPAD_UP],
 	"baixo": [JOY_BUTTON_DPAD_DOWN],
 	"esquerda": [JOY_BUTTON_DPAD_LEFT],
 	"direita": [JOY_BUTTON_DPAD_RIGHT],
 	"golpe": [JOY_BUTTON_A, JOY_BUTTON_RIGHT_SHOULDER],
-	"invisivel": [JOY_BUTTON_B, JOY_BUTTON_Y, JOY_BUTTON_LEFT_SHOULDER],
+	"invisivel": [JOY_BUTTON_B, JOY_BUTTON_LEFT_SHOULDER],
 	"lingua": [JOY_BUTTON_X],
 }
 ## Eixos do controle: [eixo, sentido]. Analógico esquerdo move; RT é a língua, LT o invisível.
@@ -203,7 +203,7 @@ func descricao(controle: String) -> String:
 	var aparelho := dispositivo_de(controle)
 	if aparelho >= 0:
 		var rotulo := "Xbox %d" % (aparelho + 1) if eh_xbox(aparelho) else "controle %d" % (aparelho + 1)
-		return "%s, A/B-Y/X" % rotulo
+		return "%s, A/B/X" % rotulo
 	return "bot"
 
 
@@ -212,7 +212,7 @@ const NOMES_TECLADO := {
 	"teclado1": {"golpe": "F", "invisivel": "G", "lingua": "H", "lados": "A/D", "cima_baixo": "W/S"},
 	"teclado2": {"golpe": ".", "invisivel": ",", "lingua": ";", "lados": "direcional", "cima_baixo": "direcional"},
 }
-const NOMES_PAD := {"golpe": "A", "invisivel": "B/Y", "lingua": "X", "pausa": "Start", "lados": "direcional", "cima_baixo": "direcional"}
+const NOMES_PAD := {"golpe": "A", "invisivel": "B", "lingua": "X", "pausa": "Start", "lados": "direcional", "cima_baixo": "direcional"}
 
 
 ## Nome curto do botão de uma ação para mostrar na tela (ex.: "F", ".", "A").

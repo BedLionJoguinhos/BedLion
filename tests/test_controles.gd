@@ -38,7 +38,8 @@ func test_acoes_obrigatorias_teclado() -> void:
 func test_configuracao_gamepad() -> void:
 	assert_true(Controles.BOTOES_PAD.has("golpe"), "Gamepad possui botão mapeado para golpe")
 	assert_true(Controles.BOTOES_PAD.has("invisivel"), "Gamepad possui botão mapeado para invisibilidade")
-	assert_true(Controles.BOTOES_PAD["invisivel"].has(JOY_BUTTON_Y), "Botão Y do Xbox mapeado para invisibilidade")
+	assert_true(Controles.BOTOES_PAD["invisivel"].has(JOY_BUTTON_B) and not Controles.BOTOES_PAD["invisivel"].has(JOY_BUTTON_Y),
+		"Invisibilidade usa B (sem Y) nos botões frontais do Xbox")
 	assert_true(Controles.BOTOES_PAD.has("lingua"), "Gamepad possui botão mapeado para língua")
 	assert_true(Controles.EIXOS_PAD.has("lingua"), "Gatilho direito (RT) mapeado para língua")
 	assert_true(Controles.EIXOS_PAD.has("invisivel"), "Gatilho esquerdo (LT) mapeado para invisibilidade")
