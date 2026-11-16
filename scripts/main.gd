@@ -89,6 +89,7 @@ var _tempo_tremor := 0.0
 var _menu_pausa: Control
 var _botao_pausa_continuar: Button
 var _rotulo_aviso_pausa: Label
+var _entrada_pausa: Node
 var _tela_fim_partida: Control
 var _rotulo_vencedor: Label
 var _desenho_vencedor: Node2D
@@ -97,8 +98,18 @@ var _botao_fim_reiniciar: Button
 var _indice_vencedor := -1
 
 
+class _EntradaPausa extends Node:
+	var _dono: Node
+
+	func _init(dono: Node) -> void:
+		_dono = dono
+
+	func _unhandled_input(evento: InputEvent) -> void:
+		if is_instance_valid(_dono) and _dono.tratar_entrada_pausa(evento):
+			get_viewport().set_input_as_handled()
+
+
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	_camera = Camera2D.new()
 	_camera.anchor_mode = Camera2D.ANCHOR_MODE_FIXED_TOP_LEFT
 	_camera.position = Vector2.ZERO
@@ -158,7 +169,12 @@ func alternar_pausa() -> void:
 		_abrir_pausa()
 
 
-func _unhandled_input(evento: InputEvent) -> void:
+func _exit_tree() -> void:
+	if get_tree() and get_tree().paused:
+		get_tree().paused = false
+
+
+func tratar_entrada_pausa(evento: InputEvent) -> bool:
 	var e_pausa := false
 	if evento is InputEventKey:
 		var tecla_pausa := evento as InputEventKey
@@ -171,12 +187,13 @@ func _unhandled_input(evento: InputEvent) -> void:
 	if not e_pausa and get_tree() and get_tree().paused and evento.is_action_pressed("ui_cancel"):
 		e_pausa = true
 
-	if e_pausa:
-		if not _partida_acabou:
-			alternar_pausa()
-			get_viewport().set_input_as_handled()
-			return
+	if e_pausa and not _partida_acabou:
+		alternar_pausa()
+		return true
+	return false
 
+
+func _unhandled_input(evento: InputEvent) -> void:
 	if get_tree() and get_tree().paused:
 		return
 
@@ -283,6 +300,9 @@ func _montar_hud() -> void:
 	var hud := CanvasLayer.new()
 	hud.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(hud)
+
+	_entrada_pausa = _EntradaPausa.new(self)
+	hud.add_child(_entrada_pausa)
 
 	_placar = Placar.new()
 	_placar.size = Vector2(TAMANHO.x, 50)

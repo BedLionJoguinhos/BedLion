@@ -67,10 +67,19 @@ func test_menu_pausa() -> void:
 	main.alternar_pausa()
 	assert_true(tree.paused, "Pausar o jogo congela o SceneTree (paused = true)")
 	assert_true(menu.visible, "Menu de pausa torna-se visível ao pausar")
+	var rodada: Node = main.get("_rodada")
+	var vivos: Array = main.get("_vivos")
+	assert_true(not main.can_process() and not rodada.can_process(),
+		"Main e nó da rodada param de processar durante a pausa")
+	assert_true(vivos.size() > 0 and not vivos[0].can_process(),
+		"Camaleões da partida congelam durante a pausa")
+	assert_true(menu.can_process(), "Menu de pausa permanece interativo enquanto pausado")
 	
 	main.alternar_pausa()
 	assert_true(not tree.paused, "Despausar restaura o processamento normal (paused = false)")
 	assert_true(not menu.visible, "Menu de pausa torna-se oculto ao despausar")
+	assert_true(rodada.can_process() and vivos[0].can_process(),
+		"Rodada e camaleões voltam a processar ao despausar")
 	
 	main.free()
 
@@ -101,20 +110,21 @@ func test_pausa_controle_xbox() -> void:
 	var tree := Engine.get_main_loop() as SceneTree
 	tree.root.add_child(main)
 	main._ready()
+	var entrada_pausa: Node = main.get("_entrada_pausa")
 
 	var btn_start := InputEventJoypadButton.new()
 	btn_start.device = 0
 	btn_start.button_index = JOY_BUTTON_START
 	btn_start.pressed = true
-	main._unhandled_input(btn_start)
-	assert_true(tree.paused and main.get("_menu_pausa").visible,
+	entrada_pausa._unhandled_input(btn_start)
+	assert_true(tree.paused and main.get("_menu_pausa").visible and entrada_pausa.can_process(),
 		"Botão Start do Xbox abre o menu de pausa e pausa a árvore")
 
 	var btn_b := InputEventJoypadButton.new()
 	btn_b.device = 0
 	btn_b.button_index = JOY_BUTTON_B
 	btn_b.pressed = true
-	main._unhandled_input(btn_b)
+	entrada_pausa._unhandled_input(btn_b)
 	assert_true(not tree.paused and not main.get("_menu_pausa").visible,
 		"Botão B (ui_cancel) do Xbox despausa e fecha o menu de pausa")
 

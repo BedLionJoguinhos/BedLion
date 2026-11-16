@@ -36,13 +36,14 @@ func test_acoes_obrigatorias_teclado() -> void:
 			assert_true(mapa.has(acao) and mapa[acao].size() > 0, "'%s' mapeia a ação obrigatória '%s'" % [teclado_id, acao])
 
 func test_configuracao_gamepad() -> void:
-	assert_true(Controles.BOTOES_PAD.has("golpe"), "Gamepad possui botão mapeado para golpe")
-	assert_true(Controles.BOTOES_PAD.has("invisivel"), "Gamepad possui botão mapeado para invisibilidade")
-	assert_true(Controles.BOTOES_PAD["invisivel"].has(JOY_BUTTON_B) and not Controles.BOTOES_PAD["invisivel"].has(JOY_BUTTON_Y),
-		"Invisibilidade usa B (sem Y) nos botões frontais do Xbox")
-	assert_true(Controles.BOTOES_PAD.has("lingua"), "Gamepad possui botão mapeado para língua")
-	assert_true(Controles.EIXOS_PAD.has("lingua"), "Gatilho direito (RT) mapeado para língua")
-	assert_true(Controles.EIXOS_PAD.has("invisivel"), "Gatilho esquerdo (LT) mapeado para invisibilidade")
+	assert_true(Controles.BOTOES_PAD.get("golpe", []) == [JOY_BUTTON_A],
+		"Golpe usa exclusivamente o botão A (sem RB)")
+	assert_true(Controles.BOTOES_PAD.get("invisivel", []) == [JOY_BUTTON_B],
+		"Invisibilidade usa exclusivamente o botão B (sem LB nem Y)")
+	assert_true(Controles.BOTOES_PAD.get("lingua", []) == [JOY_BUTTON_X],
+		"Língua usa exclusivamente o botão X")
+	assert_true(not Controles.EIXOS_PAD.has("lingua") and not Controles.EIXOS_PAD.has("invisivel"),
+		"Gatilhos LT e RT não estão mapeados")
 	assert_true(Controles.MAX_PADS >= 4, "Suporta ao menos 4 controles conectados simultaneamente")
 
 func test_input_map_pads_e_deadzones() -> void:
@@ -57,10 +58,8 @@ func test_input_map_pads_e_deadzones() -> void:
 
 	assert_true(is_equal_approx(InputMap.action_get_deadzone("pad0_esquerda"), Controles.ZONA_MORTA),
 		"Ação de movimento usa ZONA_MORTA padrão (0.22)")
-	assert_true(is_equal_approx(InputMap.action_get_deadzone("pad0_lingua"), Controles.ZONA_MORTA_GATILHO),
-		"Ação de gatilho (língua) usa ZONA_MORTA_GATILHO (0.25)")
-	assert_true(is_equal_approx(InputMap.action_get_deadzone("pad0_invisivel"), Controles.ZONA_MORTA_GATILHO),
-		"Ação de gatilho (invisível) usa ZONA_MORTA_GATILHO (0.25)")
+	assert_true(is_equal_approx(InputMap.action_get_deadzone("pad0_golpe"), Controles.ZONA_MORTA),
+		"Ação de combate usa ZONA_MORTA padrão (0.22)")
 
 func test_input_map_interface_gamepad() -> void:
 	for acao in ["ui_up", "ui_down", "ui_left", "ui_right", "ui_accept", "ui_cancel"]:

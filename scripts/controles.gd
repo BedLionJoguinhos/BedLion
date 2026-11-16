@@ -26,24 +26,22 @@ const TECLADOS := {
 	},
 }
 
-## Botões do controle (padrão Xbox: A, B, X, LB, RB e o direcional).
+## Botões do controle (padrão Xbox: A, B, X e o direcional).
 const BOTOES_PAD := {
 	"cima": [JOY_BUTTON_DPAD_UP],
 	"baixo": [JOY_BUTTON_DPAD_DOWN],
 	"esquerda": [JOY_BUTTON_DPAD_LEFT],
 	"direita": [JOY_BUTTON_DPAD_RIGHT],
-	"golpe": [JOY_BUTTON_A, JOY_BUTTON_RIGHT_SHOULDER],
-	"invisivel": [JOY_BUTTON_B, JOY_BUTTON_LEFT_SHOULDER],
+	"golpe": [JOY_BUTTON_A],
+	"invisivel": [JOY_BUTTON_B],
 	"lingua": [JOY_BUTTON_X],
 }
-## Eixos do controle: [eixo, sentido]. Analógico esquerdo move; RT é a língua, LT o invisível.
+## Eixos do controle: [eixo, sentido]. Analógico esquerdo move.
 const EIXOS_PAD := {
 	"cima": [JOY_AXIS_LEFT_Y, -1.0],
 	"baixo": [JOY_AXIS_LEFT_Y, 1.0],
 	"esquerda": [JOY_AXIS_LEFT_X, -1.0],
 	"direita": [JOY_AXIS_LEFT_X, 1.0],
-	"lingua": [JOY_AXIS_TRIGGER_RIGHT, 1.0],
-	"invisivel": [JOY_AXIS_TRIGGER_LEFT, 1.0],
 }
 ## Teclas e botões extras nas ações nativas de interface (menus e configurações).
 const INTERFACE_TECLAS := {
@@ -72,8 +70,6 @@ const INTERFACE_EIXOS_PAD := {
 const MAX_PADS := 8
 ## Zona morta do analógico esquerdo na arena (evita drift sem perder precisão).
 const ZONA_MORTA := 0.22
-## Zona morta para gatilhos analógicos (LT/RT) nas ações de combate.
-const ZONA_MORTA_GATILHO := 0.25
 ## Zona morta mais alta na navegação de menus com o analógico esquerdo.
 const ZONA_MORTA_INTERFACE := 0.45
 
@@ -92,8 +88,7 @@ func _ready() -> void:
 	# assim cada jogador só responde ao próprio controle.
 	for pad in MAX_PADS:
 		for acao in BOTOES_PAD:
-			var zona := ZONA_MORTA_GATILHO if (acao == "lingua" or acao == "invisivel") else ZONA_MORTA
-			var nome := _criar_acao("pad%d_%s" % [pad, acao], zona)
+			var nome := _criar_acao("pad%d_%s" % [pad, acao], ZONA_MORTA)
 			for botao in BOTOES_PAD[acao]:
 				var evento := InputEventJoypadButton.new()
 				evento.device = pad
