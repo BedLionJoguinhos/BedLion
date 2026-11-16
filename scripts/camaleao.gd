@@ -401,6 +401,7 @@ func _mover_lingua(delta: float) -> void:
 				_estado_lingua = "gancho" # gruda na parede e puxa quem lançou
 				_tempo_gancho = 0.0
 				_embalo = Vector2.ZERO # o voo novo manda (dá para emendar ganchos)
+				Controles.vibrar(controle, 0.25, 0.35, 0.1)
 			elif not batida.is_empty() or _percorrido >= _dados_lingua["alcance"]:
 				_estado_lingua = "voltando"
 				if _dados_lingua.has("max_grudes"):
@@ -561,6 +562,8 @@ func _comecar_puxada(alvo: Node) -> void:
 	# Velocidade para chegar em tempo_puxada segundos, seja de longe ou de perto.
 	var falta := maxf(position.distance_to(alvo.position) - DISTANCIA_FIM_PUXADA, 10.0)
 	alvo.ser_puxado(self, falta / _dados_lingua["tempo_puxada"])
+	Controles.vibrar(controle, 0.25, 0.4, 0.12)
+	Controles.vibrar(alvo.controle, 0.4, 0.25, 0.15)
 
 
 ## Um terceiro camaleão encostando na língua esticada (da boca até "ponta") corta ela.
@@ -716,6 +719,8 @@ static func resolver_golpes_pendentes() -> void:
 		efeito.acertou = acertou
 		if is_instance_valid(atacante.mundo):
 			atacante.mundo.add_child(efeito)
+		if acertou:
+			atacante._vibrar_acerto_golpe()
 	for casca in cascas_estouradas:
 		if is_instance_valid(casca):
 			casca.estourar()
@@ -801,6 +806,10 @@ func _largar_upgrade() -> void:
 	mundo.add_child(no_chao)
 
 
+func _vibrar_acerto_golpe() -> void:
+	Controles.vibrar(controle, 0.35, 0.7, 0.14)
+
+
 ## Chamado pelo golpe de outro camaleão.
 func morrer() -> void:
 	_morrer(false)
@@ -810,6 +819,7 @@ func morrer() -> void:
 func _morrer(caiu_na_agua: bool) -> void:
 	if not vivo:
 		return
+	Controles.vibrar(controle, 0.5, 0.85, 0.22)
 	soltar_lingua(RECARGA_LINGUA)
 	if _sendo_puxado():
 		puxado_por.soltar_lingua(RECARGA_LINGUA)
