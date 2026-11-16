@@ -88,6 +88,9 @@ var _camera: Camera2D
 var _tempo_tremor := 0.0
 var _menu_pausa: Control
 var _botao_pausa_continuar: Button
+var _rotulo_aviso_pausa: Label
+var _guia_comandos: Control
+var _entrada_pausa: Node
 var _tela_fim_partida: Control
 var _rotulo_vencedor: Label
 var _desenho_vencedor: Node2D
@@ -96,8 +99,18 @@ var _botao_fim_reiniciar: Button
 var _indice_vencedor := -1
 
 
+class _EntradaPausa extends Node:
+	var _dono: Node
+
+	func _init(dono: Node) -> void:
+		_dono = dono
+
+	func _unhandled_input(evento: InputEvent) -> void:
+		if is_instance_valid(_dono) and _dono.tratar_entrada_pausa(evento):
+			get_viewport().set_input_as_handled()
+
+
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	_camera = Camera2D.new()
 	_camera.anchor_mode = Camera2D.ANCHOR_MODE_FIXED_TOP_LEFT
 	_camera.position = Vector2.ZERO
@@ -125,8 +138,12 @@ func tremer_tela(duracao := DURACAO_TREMOR) -> void:
 	_tempo_tremor = duracao
 
 
-func _abrir_pausa() -> void:
-	if _partida_acabou or (_menu_pausa and _menu_pausa.visible) or (_tela_fim_partida and _tela_fim_partida.visible):
+func _abrir_pausa(aviso := "") -> void:
+	if _partida_acabou or (_tela_fim_partida and _tela_fim_partida.visible):
+		return
+	if _rotulo_aviso_pausa:
+		_rotulo_aviso_pausa.text = aviso
+	if _menu_pausa and _menu_pausa.visible:
 		return
 	if get_tree():
 		get_tree().paused = true
@@ -137,6 +154,8 @@ func _abrir_pausa() -> void:
 
 
 func _fechar_pausa() -> void:
+	if _rotulo_aviso_pausa:
+		_rotulo_aviso_pausa.text = ""
 	if not _menu_pausa or not _menu_pausa.visible:
 		return
 	_menu_pausa.visible = false
@@ -151,26 +170,32 @@ func alternar_pausa() -> void:
 		_abrir_pausa()
 
 
-func _unhandled_input(evento: InputEvent) -> void:
+func _exit_tree() -> void:
+	if get_tree() and get_tree().paused:
+		get_tree().paused = false
+
+
+func tratar_entrada_pausa(evento: InputEvent) -> bool:
 	var e_pausa := false
 	if evento is InputEventKey:
-		var tecla := evento as InputEventKey
-		if tecla.pressed and not tecla.echo and (tecla.keycode == KEY_ESCAPE or tecla.keycode == KEY_P):
+		var tecla_pausa := evento as InputEventKey
+		if tecla_pausa.pressed and not tecla_pausa.echo and (tecla_pausa.keycode == KEY_ESCAPE or tecla_pausa.keycode == KEY_P):
 			e_pausa = true
 	elif evento is InputEventJoypadButton:
 		var btn := evento as InputEventJoypadButton
-		if btn.pressed and btn.button_index == JOY_BUTTON_START:
+		if btn.pressed and not btn.is_echo() and btn.button_index == JOY_BUTTON_START:
 			e_pausa = true
-	elif get_tree().paused and evento.is_action_pressed("ui_cancel"):
+	if not e_pausa and get_tree() and get_tree().paused and evento.is_action_pressed("ui_cancel"):
 		e_pausa = true
 
-	if e_pausa:
-		if not _partida_acabou:
-			alternar_pausa()
-			get_viewport().set_input_as_handled()
-			return
+	if e_pausa and not _partida_acabou:
+		alternar_pausa()
+		return true
+	return false
 
-	if get_tree().paused:
+
+func _unhandled_input(evento: InputEvent) -> void:
+	if get_tree() and get_tree().paused:
 		return
 
 	var tecla := evento as InputEventKey
@@ -185,11 +210,23 @@ func _unhandled_input(evento: InputEvent) -> void:
 			_nova_rodada()
 
 
-func _ao_mudar_controles(_aparelho: int, _conectado: bool) -> void:
-	# Um controle entrou ou saiu: monta os jogadores de novo e recomeça
-	# (só sem lobby; com lobby, quem joga já foi escolhido lá).
+func _ao_mudar_controles(aparelho: int, conectado: bool) -> void:
+	# Sem lobby, remonta os jogadores; com lobby, pausa se o controle de alguém cair.
 	if not _veio_do_lobby:
 		_nova_partida()
+		return
+	var prefixo := "pad%d" % aparelho
+	var usa_este_pad := false
+	for jogador in _jogadores:
+		if jogador.get("controle", "") == prefixo:
+			usa_este_pad = true
+			break
+	if not usa_este_pad:
+		return
+	if not conectado and not _partida_acabou:
+		_abrir_pausa("Controle %d desconectado!\nReconecte para continuar." % (aparelho + 1))
+	elif conectado and _rotulo_aviso_pausa and _menu_pausa and _menu_pausa.visible:
+		_rotulo_aviso_pausa.text = "Controle %d reconectado!" % (aparelho + 1)
 
 
 ## Escolhe o mapa da rodada. Os mapas saem de uma "sacola" embaralhada: só
@@ -264,6 +301,9 @@ func _montar_hud() -> void:
 	var hud := CanvasLayer.new()
 	hud.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(hud)
+
+	_entrada_pausa = _EntradaPausa.new(self)
+	hud.add_child(_entrada_pausa)
 
 	_placar = Placar.new()
 	_placar.size = Vector2(TAMANHO.x, 50)
@@ -347,6 +387,10 @@ func _montar_tela_fim_partida(hud: CanvasLayer) -> void:
 	)
 	coluna_botoes.add_child(botao_menu)
 
+	var dica_fim := Ui.rotulo("Enter / A para confirmar", 16, Vector2(pos_painel.x, pos_painel.y + alt_painel - 26), larg_painel)
+	dica_fim.add_theme_color_override("font_color", Color(1, 1, 1, 0.72))
+	_tela_fim_partida.add_child(dica_fim)
+
 
 func _desenhar_vencedor() -> void:
 	if _indice_vencedor < 0 or _indice_vencedor >= _jogadores.size():
@@ -406,20 +450,24 @@ func _montar_menu_pausa(hud: CanvasLayer) -> void:
 	cortina.mouse_filter = Control.MOUSE_FILTER_STOP
 	_menu_pausa.add_child(cortina)
 
-	var larg_painel := 460.0
-	var alt_painel := 430.0
+	var larg_painel := 880.0
+	var alt_painel := 510.0
 	var pos_painel := Vector2((TAMANHO.x - larg_painel) / 2.0, (TAMANHO.y - alt_painel) / 2.0)
 	var painel := Ui.painel(Rect2(pos_painel, Vector2(larg_painel, alt_painel)), Ui.AMARELO)
 	painel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_menu_pausa.add_child(painel)
 
-	var titulo := Ui.rotulo("Jogo Pausado", 44, Vector2(pos_painel.x, pos_painel.y + 36), larg_painel)
+	var titulo := Ui.rotulo("Jogo Pausado", 44, Vector2(pos_painel.x, pos_painel.y + 22), larg_painel)
 	titulo.add_theme_color_override("font_color", Ui.AMARELO)
 	_menu_pausa.add_child(titulo)
 
+	_rotulo_aviso_pausa = Ui.rotulo("", 18, Vector2(pos_painel.x + 20.0, pos_painel.y + 78), larg_painel - 40.0)
+	_rotulo_aviso_pausa.add_theme_color_override("font_color", Color(1.0, 0.55, 0.4))
+	_menu_pausa.add_child(_rotulo_aviso_pausa)
+
 	var coluna := VBoxContainer.new()
 	coluna.add_theme_constant_override("separation", 18)
-	coluna.position = Vector2(pos_painel.x + (larg_painel - 340.0) / 2.0, pos_painel.y + 120.0)
+	coluna.position = Vector2(pos_painel.x + 46.0, pos_painel.y + 146.0)
 	_menu_pausa.add_child(coluna)
 
 	_botao_pausa_continuar = Ui.botao("Continuar", Vector2(340, 68), 30)
@@ -439,6 +487,78 @@ func _montar_menu_pausa(hud: CanvasLayer) -> void:
 		Partida.ir_para(Partida.CENA_MENU)
 	)
 	coluna.add_child(botao_sair)
+
+	_guia_comandos = _montar_guia_comandos(Vector2(pos_painel.x + 422.0, pos_painel.y + 132.0), 412.0, 316.0)
+	_menu_pausa.add_child(_guia_comandos)
+
+	var dica_pausa := Ui.rotulo("Enter / A: escolher   |   Esc / B / Start: voltar", 16, Vector2(pos_painel.x, pos_painel.y + alt_painel - 36), larg_painel)
+	dica_pausa.add_theme_color_override("font_color", Color(1, 1, 1, 0.72))
+	_menu_pausa.add_child(dica_pausa)
+
+
+func _montar_guia_comandos(pos: Vector2, largura: float, altura: float) -> Control:
+	var guia := Control.new()
+	guia.position = pos
+	guia.size = Vector2(largura, altura)
+	guia.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	guia.add_child(Ui.painel(Rect2(Vector2.ZERO, Vector2(largura, altura)), Color(1, 1, 1, 0.25)))
+
+	var cabecalho := Ui.rotulo("Comandos In-Game", 24, Vector2(0, 14), largura)
+	cabecalho.add_theme_color_override("font_color", Ui.AMARELO)
+	guia.add_child(cabecalho)
+
+	var perfis := [
+		{
+			"titulo": "Controle (Xbox)",
+			"linhas": [
+				"Mover: Analógico Esq.   |   Pausa: %s" % Controles.nome_botao("pad0", "pausa"),
+				"Golpe: %s   |   Invisível: %s   |   Língua: %s" % [
+					Controles.nome_botao("pad0", "golpe"),
+					Controles.nome_botao("pad0", "invisivel"),
+					Controles.nome_botao("pad0", "lingua"),
+				],
+			],
+		},
+		{
+			"titulo": "Teclado 1",
+			"linhas": [
+				"Mover: %s / %s" % [Controles.nome_botao("teclado1", "cima_baixo"), Controles.nome_botao("teclado1", "lados")],
+				"Golpe: %s   |   Invisível: %s   |   Língua: %s" % [
+					Controles.nome_botao("teclado1", "golpe"),
+					Controles.nome_botao("teclado1", "invisivel"),
+					Controles.nome_botao("teclado1", "lingua"),
+				],
+			],
+		},
+		{
+			"titulo": "Teclado 2",
+			"linhas": [
+				"Mover: Setas",
+				"Golpe: %s   |   Invisível: %s   |   Língua: %s" % [
+					Controles.nome_botao("teclado2", "golpe"),
+					Controles.nome_botao("teclado2", "invisivel"),
+					Controles.nome_botao("teclado2", "lingua"),
+				],
+			],
+		},
+	]
+
+	var y := 58.0
+	for perfil in perfis:
+		var rotulo_titulo := Ui.rotulo(perfil["titulo"], 18, Vector2(20, y), largura - 40.0)
+		rotulo_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		rotulo_titulo.add_theme_color_override("font_color", Color(0.65, 0.95, 0.55))
+		guia.add_child(rotulo_titulo)
+		y += 24.0
+		for linha in perfil["linhas"]:
+			var rotulo_linha := Ui.rotulo(linha, 16, Vector2(20, y), largura - 40.0)
+			rotulo_linha.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			rotulo_linha.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+			guia.add_child(rotulo_linha)
+			y += 22.0
+		y += 14.0
+
+	return guia
 
 
 func _criar_rotulo(posicao: Vector2, tamanho_fonte: int, contorno: int) -> Label:
@@ -486,8 +606,12 @@ func _escolher_jogadores() -> void:
 
 func _escrever_ajuda() -> void:
 	var partes := PackedStringArray()
+	var usa_pad := Controles.tem_controle_conectado()
 	for jogador in _jogadores:
-		var como: String = Controles.descricao(jogador["controle"])
+		var controle: String = jogador["controle"]
+		if Controles.eh_pad(controle):
+			usa_pad = true
+		var como: String = Controles.descricao(controle)
 		var bot: String = jogador["bot"]
 		if bot != "":
 			como = "bot " + Partida.NOMES_DIFICULDADE.get(bot, bot).to_lower()
@@ -495,7 +619,7 @@ func _escrever_ajuda() -> void:
 	if not _veio_do_lobby:
 		partes.append("F1: %s" % NOMES_MODO_BOT[_modo_bot])
 		partes.append("F2: próximo mapa")
-	partes.append("Esc: pausa")
+	partes.append("Esc / Start: pausa" if usa_pad else "Esc: pausa")
 	_rotulo_ajuda.text = "(golpe / invisível / língua)    " + "    |    ".join(partes)
 
 
