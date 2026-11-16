@@ -113,6 +113,7 @@ def analyze_gdscript(path: Path, rel_path: str, changed_lines: set[int]) -> tupl
     current_func: str | None = None
     current_func_start = 0
     current_func_indent = 0
+    paren_depth = 0
     hot_paths = {"_process", "_physics_process", "_draw"}
 
     def _close_func(end_line: int) -> None:
@@ -134,8 +135,9 @@ def analyze_gdscript(path: Path, rel_path: str, changed_lines: set[int]) -> tupl
         stripped = raw.strip()
         tabs = len(raw) - len(raw.lstrip("\t"))
         in_diff = idx in changed_lines
+        in_multiline = paren_depth > 0
 
-        if stripped and not stripped.startswith("#") and current_func is not None and tabs <= current_func_indent:
+        if not in_multiline and stripped and not stripped.startswith("#") and current_func is not None and tabs <= current_func_indent:
             _close_func(idx - 1)
             current_func = None
 
@@ -218,8 +220,8 @@ def analyze_gdscript(path: Path, rel_path: str, changed_lines: set[int]) -> tupl
                 )
             continue
 
-        # Deep nesting inside function
-        if current_func is not None and (tabs - current_func_indent) >= 5:
+        # Deep nesting inside function (ignore multiline dict/array/call continuations)
+        if not in_multiline and current_func is not None and (tabs - current_func_indent) >= 5:
             findings.append(
                 Finding(
                     severity="warning",
@@ -268,6 +270,27 @@ def analyze_gdscript(path: Path, rel_path: str, changed_lines: set[int]) -> tupl
                         in_pr_diff=in_diff,
                     )
                 )
+
+        in_q: str | None = None
+        i = 0
+        while i < len(raw):
+            ch = raw[i]
+            if in_q:
+                if ch == "\\" and i + 1 < len(raw):
+                    i += 2
+                    continue
+                if ch == in_q:
+                    in_q = None
+            else:
+                if ch in ('"', "'"):
+                    in_q = ch
+                elif ch == "#":
+                    break
+                elif ch in "([{":
+                    paren_depth += 1
+                elif ch in ")]}":
+                    paren_depth = max(0, paren_depth - 1)
+            i += 1
 
     if current_func is not None:
         _close_func(len(lines))

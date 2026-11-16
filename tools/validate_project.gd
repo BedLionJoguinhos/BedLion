@@ -3,6 +3,7 @@ extends SceneTree
 ## com autoloads inicializados, garantindo ausência de erros de parse/compilação.
 ## Execute com: godot --headless --path . -s tools/validate_project.gd
 
+
 func _initialize() -> void:
 	await process_frame
 
@@ -55,7 +56,5 @@ func _initialize() -> void:
 				cenas_verificadas += 1
 				instancia.free()
 
-	print("Validação concluída: %d scripts e %d cenas verificados (%d erros)." % [
-		scripts_verificados, cenas_verificadas, erros
-	])
+	print("Validação concluída: %d scripts e %d cenas verificados (%d erros)." % [scripts_verificados, cenas_verificadas, erros])
 	quit(0 if erros == 0 else 1)
