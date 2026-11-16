@@ -36,7 +36,8 @@ const Casca := preload("res://scripts/casca.gd")
 const EfeitoTexto := preload("res://scripts/efeito_texto.gd")
 const Bot := preload("res://scripts/bot.gd")
 
-const VELOCIDADE := 300.0
+## Velocidade de andar (px/s), igual para jogadores e bots. Era 300; baixou ~13%.
+const VELOCIDADE := 260.0
 const RAIO := 18.0
 ## Posição central dos pés no chão.
 const PES := Desenho.PES
