@@ -33,20 +33,44 @@ const Desenho := preload("res://scripts/desenho_camaleao.gd")
 const Caminhos := preload("res://scripts/caminhos.gd")
 
 const NIVEIS := {
-	"facil": {
-		"reacao": 0.55, "erro_mira": 0.3, "prever": 0.0, "agressividade": 0.35,
-		"poderes": 0.25, "invisibilidade": 0.12, "deteccao": 0.15, "cuidado": 0.0,
-		"esquiva": 0.05, "memoria": 1.5,
+	"facil":
+	{
+		"reacao": 0.55,
+		"erro_mira": 0.3,
+		"prever": 0.0,
+		"agressividade": 0.35,
+		"poderes": 0.25,
+		"invisibilidade": 0.12,
+		"deteccao": 0.15,
+		"cuidado": 0.0,
+		"esquiva": 0.05,
+		"memoria": 1.5,
 	},
-	"medio": {
-		"reacao": 0.32, "erro_mira": 0.14, "prever": 0.5, "agressividade": 0.6,
-		"poderes": 0.6, "invisibilidade": 0.35, "deteccao": 0.45, "cuidado": 0.45,
-		"esquiva": 0.35, "memoria": 3.0,
+	"medio":
+	{
+		"reacao": 0.32,
+		"erro_mira": 0.14,
+		"prever": 0.5,
+		"agressividade": 0.6,
+		"poderes": 0.6,
+		"invisibilidade": 0.35,
+		"deteccao": 0.45,
+		"cuidado": 0.45,
+		"esquiva": 0.35,
+		"memoria": 3.0,
 	},
-	"dificil": {
-		"reacao": 0.16, "erro_mira": 0.05, "prever": 1.0, "agressividade": 0.85,
-		"poderes": 0.95, "invisibilidade": 0.6, "deteccao": 0.85, "cuidado": 0.9,
-		"esquiva": 0.7, "memoria": 5.0,
+	"dificil":
+	{
+		"reacao": 0.16,
+		"erro_mira": 0.05,
+		"prever": 1.0,
+		"agressividade": 0.85,
+		"poderes": 0.95,
+		"invisibilidade": 0.6,
+		"deteccao": 0.85,
+		"cuidado": 0.9,
+		"esquiva": 0.7,
+		"memoria": 5.0,
 	},
 }
 
@@ -63,37 +87,37 @@ const GANHO_GANCHO := 150.0
 ## Invisível há tanto tempo sem achar ninguém: aparece de novo.
 const TEMPO_MAXIMO_INVISIVEL := 12.0
 
-var eu: CharacterBody2D # o camaleão que este cérebro controla
+var eu: CharacterBody2D  # o camaleão que este cérebro controla
 var nivel: Dictionary = {}
 
 var _tempo_pensar := 0.0
-var _destino := Vector2.INF # para onde está andando (INF = parado)
-var _mira_lingua := Vector2.ZERO # vai jogar a língua nesta direção assim que puder
+var _destino := Vector2.INF  # para onde está andando (INF = parado)
+var _mira_lingua := Vector2.ZERO  # vai jogar a língua nesta direção assim que puder
 var _validade_mira := 0.0
-var _quer_sumir := false # segurando o invisível até sumir
+var _quer_sumir := false  # segurando o invisível até sumir
 var _tempo_segurando := 0.0
 var _quer_aparecer := false
-var _quer_muda := false # um toque no invisível com o poder "muda"
-var _tempo_perto := 0.0 # há quanto tempo tem alguém ao alcance do golpe
+var _quer_muda := false  # um toque no invisível com o poder "muda"
+var _tempo_perto := 0.0  # há quanto tempo tem alguém ao alcance do golpe
 var _tempo_travado := 0.0
-var _fuga_travado := Vector2.ZERO # direção sorteada para sair de uma quina
+var _fuga_travado := Vector2.ZERO  # direção sorteada para sair de uma quina
 var _tempo_fuga_travado := 0.0
 var _esquiva := Vector2.ZERO
 var _tempo_esquiva := 0.0
 var _tempo_invisivel := 0.0
-var _sem_alvo := 0.0 # segundos sem saber onde está ninguém
+var _sem_alvo := 0.0  # segundos sem saber onde está ninguém
 var _evitar_pistas := false
-var _lado := 1.0 # para que lado contorna as paredes (fica o mesmo por um tempo)
-var _rota: Array[Vector2] = [] # caminho pelo mapa até o destino (caminhos.gd)
-var _rota_para := Vector2.INF # para qual destino a rota foi calculada
-var _tempo_rota := 0.0 # quando recalcular a rota
+var _lado := 1.0  # para que lado contorna as paredes (fica o mesmo por um tempo)
+var _rota: Array[Vector2] = []  # caminho pelo mapa até o destino (caminhos.gd)
+var _rota_para := Vector2.INF  # para qual destino a rota foi calculada
+var _tempo_rota := 0.0  # quando recalcular a rota
 var _tentou_se_soltar := false
-var _brigando := true # no momento quer ir para cima (sorteado pela agressividade)
-var _tempo_humor := 0.0 # quando sorteia de novo se quer briga
-var _intervalo := 0.3 # quanto tempo passou desde a última vez que pensou
-var _indo_na_bolha := 0.0 # segundos que ainda fica decidido a buscar uma bolha
-var _chave_golpe: Variant = null # de qual lembrança veio o alvo do golpe (para esquecer depois)
-var _estava_invisivel: Dictionary = {} # camaleão -> estava invisível na última olhada
+var _brigando := true  # no momento quer ir para cima (sorteado pela agressividade)
+var _tempo_humor := 0.0  # quando sorteia de novo se quer briga
+var _intervalo := 0.3  # quanto tempo passou desde a última vez que pensou
+var _indo_na_bolha := 0.0  # segundos que ainda fica decidido a buscar uma bolha
+var _chave_golpe: Variant = null  # de qual lembrança veio o alvo do golpe (para esquecer depois)
+var _estava_invisivel: Dictionary = {}  # camaleão -> estava invisível na última olhada
 ## O que ele sabe dos invisíveis: camaleão -> {"pos", "vel", "idade"}.
 var _memoria: Dictionary = {}
 ## Peles velhas (poder "muda"): casca -> true se ele acha que é um camaleão de verdade.
@@ -103,15 +127,18 @@ var _cascas: Dictionary = {}
 func _init(camaleao: CharacterBody2D, dificuldade: String) -> void:
 	eu = camaleao
 	nivel = NIVEIS.get(dificuldade, NIVEIS["medio"])
-	_tempo_pensar = randf_range(0.2, 0.6) # não sai todo mundo pensando junto
+	_tempo_pensar = randf_range(0.2, 0.6)  # não sai todo mundo pensando junto
 	_lado = 1.0 if randf() < 0.5 else -1.0
 
 
 ## Os botões do bot neste frame (o camaleão lê como se fosse um controle).
 func agir(delta: float) -> Dictionary:
 	var acoes := {
-		"mover": Vector2.ZERO, "golpe": false, "lingua": false,
-		"apertou_invisivel": false, "segurando_invisivel": false,
+		"mover": Vector2.ZERO,
+		"golpe": false,
+		"lingua": false,
+		"apertou_invisivel": false,
+		"segurando_invisivel": false,
 	}
 	var reacao: float = nivel["reacao"]
 	_tempo_pensar -= delta
@@ -136,9 +163,12 @@ func agir(delta: float) -> Dictionary:
 	# Língua fora: fica parado esperando (apertar de novo soltaria). Puxando
 	# alguém, golpeia assim que ele chega ao alcance (o golpe recolhe a língua).
 	if eu._estado_lingua != "":
-		if eu._estado_lingua == "puxando" and is_instance_valid(eu._preso) \
-				and eu.position.distance_to(eu._preso.position) <= eu.ALCANCE_GOLPE * 0.9 \
-				and eu._recarga_golpe <= 0.0:
+		if (
+			eu._estado_lingua == "puxando"
+			and is_instance_valid(eu._preso)
+			and eu.position.distance_to(eu._preso.position) <= eu.ALCANCE_GOLPE * 0.9
+			and eu._recarga_golpe <= 0.0
+		):
 			_tempo_perto += delta
 			if _tempo_perto >= reacao * 0.6:
 				_tempo_perto = 0.0
@@ -155,7 +185,7 @@ func agir(delta: float) -> Dictionary:
 			acoes["mover"] = eu.position.direction_to(alvo_golpe) * TOQUE_MIRAR
 			acoes["golpe"] = true
 			if _chave_golpe != null:
-				_memoria.erase(_chave_golpe) # golpeou onde achava que ele estava: acertou ou errou
+				_memoria.erase(_chave_golpe)  # golpeou onde achava que ele estava: acertou ou errou
 			return acoes
 	else:
 		_tempo_perto = 0.0
@@ -187,7 +217,7 @@ func agir(delta: float) -> Dictionary:
 		acoes["segurando_invisivel"] = true
 		acoes["apertou_invisivel"] = true
 		if _tempo_segurando > eu.TEMPO_PARA_SUMIR + 0.5:
-			_quer_sumir = false # não deu (ficou preso, a língua saiu...): desiste
+			_quer_sumir = false  # não deu (ficou preso, a língua saiu...): desiste
 	else:
 		_quer_sumir = false
 		_tempo_segurando = 0.0
@@ -201,6 +231,7 @@ func agir(delta: float) -> Dictionary:
 
 
 # --- Pensar (algumas vezes por segundo, conforme a reação) ---------------------
+
 
 func _pensar() -> void:
 	_olhar(_intervalo)
@@ -266,7 +297,7 @@ func _talvez_gancho(poderes: float) -> void:
 		if direcao != Vector2.ZERO:
 			var destino := _destino
 			_planejar_lingua(direcao)
-			_destino = destino # depois do voo continua indo para o mesmo lugar
+			_destino = destino  # depois do voo continua indo para o mesmo lugar
 
 
 ## Está preso num grude (não anda nem usa a língua por um tempinho)?
@@ -279,14 +310,13 @@ func _grudado(alvo: Node2D) -> bool:
 
 ## Com um alvo à vista (ou suspeita de onde está um invisível).
 ## preso: o alvo está grudado num grude (hora de correr e golpear).
-func _pensar_com_alvo(onde: Vector2, velocidade: Vector2, preso: bool, agressividade: float,
-		poderes: float) -> void:
+func _pensar_com_alvo(onde: Vector2, velocidade: Vector2, preso: bool, agressividade: float, poderes: float) -> void:
 	var distancia := eu.position.distance_to(onde)
 	var alcance: float = Linguas.TIPOS[eu.lingua]["alcance"]
 	var parede: bool = eu._bate_em_parede(eu.position, onde)
 	var caminho_livre := not parede
 	if distancia <= eu.ALCANCE_GOLPE * 0.9 and not parede:
-		_destino = Vector2.INF # o golpe é tratado a cada frame em agir()
+		_destino = Vector2.INF  # o golpe é tratado a cada frame em agir()
 		return
 	# Grudado não foge: perto, corre e golpeia (a língua arrancaria ele do grude).
 	if preso and (distancia < 320.0 or parede):
@@ -294,13 +324,17 @@ func _pensar_com_alvo(onde: Vector2, velocidade: Vector2, preso: bool, agressivi
 		return
 	# Poder "grude": joga a língua no caminho de quem vem, mesmo de longe. Se
 	# errar, o rastro de grude fica no chão entre os dois e prende quem passar.
-	if eu.lingua == "grude" and caminho_livre and _pode_lancar_lingua() \
-			and distancia >= alcance * 0.92 and distancia < alcance + 380.0 \
-			and randf() < poderes * 1.5 * _intervalo:
+	if (
+		eu.lingua == "grude"
+		and caminho_livre
+		and _pode_lancar_lingua()
+		and distancia >= alcance * 0.92
+		and distancia < alcance + 380.0
+		and randf() < poderes * 1.5 * _intervalo
+	):
 		_planejar_lingua(eu.position.direction_to(onde + velocidade * 0.7))
 		return
-	if caminho_livre and distancia < alcance * 0.92 and _pode_lancar_lingua() \
-			and randf() < 0.25 + 0.6 * agressividade:
+	if caminho_livre and distancia < alcance * 0.92 and _pode_lancar_lingua() and randf() < 0.25 + 0.6 * agressividade:
 		_planejar_lingua(_mirar(onde, velocidade, distancia))
 		return
 	if _brigando:
@@ -357,13 +391,13 @@ func _buscar_bolha(poderes: float, inimigo: Vector2) -> bool:
 	if _indo_na_bolha <= 0.0:
 		if randf() >= poderes:
 			return false
-		_indo_na_bolha = 1.5 # decidiu: não fica mudando de ideia a cada instante
+		_indo_na_bolha = 1.5  # decidiu: não fica mudando de ideia a cada instante
 	var alcance: float = Linguas.TIPOS[lingua]["alcance"]
 	var parede: bool = eu._bate_em_parede(eu.position, bolha.position)
 	if distancia < alcance * 0.9 and distancia > 80.0 and _pode_lancar_lingua() and not parede:
-		_planejar_lingua(eu.position.direction_to(bolha.position)) # puxa com a língua
+		_planejar_lingua(eu.position.direction_to(bolha.position))  # puxa com a língua
 	else:
-		_destino = bolha.position # ou passa por cima
+		_destino = bolha.position  # ou passa por cima
 	return true
 
 
@@ -375,7 +409,7 @@ func _talvez_sumir(poderes: float) -> bool:
 		return false
 	var lingua: String = eu.lingua
 	var pode_sumir := lingua == Linguas.BASICA or lingua == "muda" or randf() > poderes
-	var chance := float(nivel["invisibilidade"]) * 0.4 * _intervalo # por segundo
+	var chance := float(nivel["invisibilidade"]) * 0.4 * _intervalo  # por segundo
 	if pode_sumir and randf() < chance and not _deixaria_pista(eu.position):
 		if lingua == "muda":
 			_quer_muda = true
@@ -392,8 +426,7 @@ func _planejar_lingua(direcao: Vector2) -> void:
 
 
 func _pode_lancar_lingua() -> bool:
-	return not eu.invisivel and eu._estado_lingua == "" and eu._recarga_lingua <= 0.0 \
-		and eu._tempo_grudado <= 0.0
+	return not eu.invisivel and eu._estado_lingua == "" and eu._recarga_lingua <= 0.0 and eu._tempo_grudado <= 0.0
 
 
 ## Direção da língua para pegar quem está em "onde": adianta a mira para onde
@@ -415,8 +448,7 @@ func _desviar_de_lingua() -> bool:
 		var dir: Vector2 = outro.direcao
 		var na_frente := para_mim.dot(dir)
 		var de_lado := absf(para_mim.cross(dir))
-		if na_frente > 0.0 and na_frente < alcance + 30.0 and de_lado < 50.0 \
-				and randf() < float(nivel["esquiva"]):
+		if na_frente > 0.0 and na_frente < alcance + 30.0 and de_lado < 50.0 and randf() < float(nivel["esquiva"]):
 			var lado := dir.orthogonal()
 			if lado.dot(para_mim) < 0.0:
 				lado = -lado
@@ -427,6 +459,7 @@ func _desviar_de_lingua() -> bool:
 
 
 # --- Olhar (o que ele vê na tela) -------------------------------------------
+
 
 func _outros() -> Array:
 	var lista: Array = []
@@ -489,17 +522,17 @@ func _pista_de(outro: Node) -> float:
 	var pes: Vector2 = outro.position + PES
 	var andando: bool = outro.get_real_velocity().length() > 20.0
 	if Mapas.na_luz(mapa, outro.position + PES):
-		return 8.0 # sombra no sol: bem certinho
+		return 8.0  # sombra no sol: bem certinho
 	if Mapas.na_poca(mapa, pes) and (andando or randf() < 0.3):
-		return 14.0 # ondinhas
+		return 14.0  # ondinhas
 	if outro._tempo_pes_sujos > 0.0 and andando:
-		return 18.0 # pegadas
+		return 18.0  # pegadas
 	for item in mapa.get("grama", []):
 		var capim: Rect2 = item
 		if Mapas.dentro_arredondado(capim, pes):
-			return 28.0 # capim deitando
+			return 28.0  # capim deitando
 	if andando and Mapas.ponte_em(mapa, pes).has_area():
-		return 30.0 # ondinhas do lado da ponte
+		return 30.0  # ondinhas do lado da ponte
 	return -1.0
 
 
@@ -537,8 +570,7 @@ func _alvo_do_golpe() -> Vector2:
 	var alcance: float = eu.ALCANCE_GOLPE * 0.9
 	_chave_golpe = null
 	var alvo := _alvo_visivel()
-	if alvo and eu.position.distance_to(alvo.position) <= alcance \
-			and not eu._bate_em_parede(eu.position, alvo.position):
+	if alvo and eu.position.distance_to(alvo.position) <= alcance and not eu._bate_em_parede(eu.position, alvo.position):
 		return alvo.position
 	for outro in _memoria:
 		var lembranca: Dictionary = _memoria[outro]
@@ -577,6 +609,7 @@ func _mais_perto(nos: Array) -> Node2D:
 
 
 # --- Andar ------------------------------------------------------------------
+
 
 ## Direção do direcional neste frame: vai para o destino pelo caminho do mapa
 ## (contornando paredes e rios), desviando no caminho de água, grude e, se for
@@ -698,10 +731,7 @@ func _deixaria_pista(ponto: Vector2) -> bool:
 
 ## Garante que o ponto fique dentro dos limites internos navegáveis da arena.
 func _limitar_arena(ponto: Vector2) -> Vector2:
-	return Vector2(
-		clampf(ponto.x, 65.0, 1535.0),
-		clampf(ponto.y, 65.0, 835.0)
-	)
+	return Vector2(clampf(ponto.x, 65.0, 1535.0), clampf(ponto.y, 65.0, 835.0))
 
 
 ## Um ponto do outro lado, longe de "perigo".

@@ -28,10 +28,10 @@ const ESPERA_ETAPA := 0.25
 
 ## Cada vaga: {} vazia, ou {"controle": String, "cor": int (índice em Partida.CORES), "pronto": bool}.
 var _vagas: Array = [{}, {}, {}, {}]
-var _etapa := "entrar" # "entrar" ou "bots"
+var _etapa := "entrar"  # "entrar" ou "bots"
 var _quantidade_bots := 0
 var _dificuldade := "medio"
-var _linha := 0 # etapa 2: 0 = quantidade de bots, 1 = dificuldade
+var _linha := 0  # etapa 2: 0 = quantidade de bots, 1 = dificuldade
 var _espera := 0.0
 var _tempo := 0.0
 
@@ -117,7 +117,7 @@ func _process(delta: float) -> void:
 	if _espera <= 0.0:
 		for controle in _controles_disponiveis():
 			if _espera > 0.0:
-				break # mudou de etapa agora: o resto espera o próximo aperto
+				break  # mudou de etapa agora: o resto espera o próximo aperto
 			if _etapa == "entrar":
 				_entrada_etapa_entrar(controle)
 			else:
@@ -158,6 +158,7 @@ func _apertou(controle: String, acao: String) -> bool:
 
 
 # --- Etapa 1: entrar e escolher a cor ----------------------------------------
+
 
 func _entrada_etapa_entrar(controle: String) -> void:
 	var vaga := _vaga_de(controle)
@@ -252,6 +253,7 @@ func _continuar_com_mouse() -> void:
 
 
 # --- Etapa 2: bots e dificuldade ---------------------------------------------
+
 
 func _ir_para_bots() -> void:
 	if _humanos() >= MAX_JOGADORES:
@@ -353,6 +355,7 @@ func _comecar() -> void:
 
 # --- Tela ---------------------------------------------------------------------
 
+
 func _montar_painel_bots() -> void:
 	_painel_bots = Control.new()
 	_painel_bots.position = Vector2(0, 610)
@@ -365,18 +368,22 @@ func _montar_painel_bots() -> void:
 	var menos := Ui.botao("-", Vector2(60, 56), 34)
 	menos.position = Vector2(620, 18)
 	menos.focus_mode = Control.FOCUS_NONE
-	menos.pressed.connect(func() -> void:
-		_linha = 0
-		_ajustar_bots(-1))
+	menos.pressed.connect(
+		func() -> void:
+			_linha = 0
+			_ajustar_bots(-1)
+	)
 	_painel_bots.add_child(menos)
 	_rotulo_bots = Ui.rotulo("0", 36, Vector2(690, 20), 90)
 	_painel_bots.add_child(_rotulo_bots)
 	var mais := Ui.botao("+", Vector2(60, 56), 34)
 	mais.position = Vector2(790, 18)
 	mais.focus_mode = Control.FOCUS_NONE
-	mais.pressed.connect(func() -> void:
-		_linha = 0
-		_ajustar_bots(1))
+	mais.pressed.connect(
+		func() -> void:
+			_linha = 0
+			_ajustar_bots(1)
+	)
 	_painel_bots.add_child(mais)
 
 	_rotulo_linha_dificuldade = Ui.rotulo("Dificuldade", 32, Vector2(330, 100), 260)
@@ -448,8 +455,9 @@ func _desenhar_vagas() -> void:
 			_texto(fonte, Vector2(meio, cartao.position.y + 50), "Jogador %d" % (i + 1), 28, Color.WHITE)
 			var balanco := 0.0 if pronto else sin(_tempo * 3.0 + i) * 5.0
 			var passo := _tempo * 7.0 if not pronto else 0.0
-			Desenho.desenhar(_desenho, Transform2D(0.0, Vector2.ONE * 3.0, 0.0,
-				Vector2(meio, cartao.position.y + 170 + balanco)), cor, Vector2.RIGHT, true, passo)
+			Desenho.desenhar(
+				_desenho, Transform2D(0.0, Vector2.ONE * 3.0, 0.0, Vector2(meio, cartao.position.y + 170 + balanco)), cor, Vector2.RIGHT, true, passo
+			)
 			_desenho.draw_set_transform(Vector2.ZERO)
 			var controle: String = vaga["controle"]
 			_texto(fonte, Vector2(meio, cartao.position.y + 290), Partida.CORES[vaga["cor"]]["nome"], 32, cor.lightened(0.2))
@@ -467,8 +475,9 @@ func _desenhar_vagas() -> void:
 			_fundo_cartao.border_color = Color(cor_bot, 0.4)
 			_fundo_cartao.draw(_desenho.get_canvas_item(), cartao)
 			_texto(fonte, Vector2(meio, cartao.position.y + 50), "Bot", 28, Color.WHITE)
-			Desenho.desenhar(_desenho, Transform2D(0.0, Vector2.ONE * 3.0, 0.0,
-				Vector2(meio, cartao.position.y + 170)), Color(cor_bot, 0.85), Vector2.LEFT, false, 0.0)
+			Desenho.desenhar(
+				_desenho, Transform2D(0.0, Vector2.ONE * 3.0, 0.0, Vector2(meio, cartao.position.y + 170)), Color(cor_bot, 0.85), Vector2.LEFT, false, 0.0
+			)
 			_desenho.draw_set_transform(Vector2.ZERO)
 			_texto(fonte, Vector2(meio, cartao.position.y + 290), Partida.CORES[indice]["nome"], 32, cor_bot.lightened(0.2))
 			_texto(fonte, Vector2(meio, cartao.position.y + 330), Partida.NOMES_DIFICULDADE[_dificuldade], 24, Ui.AMARELO)

@@ -5,7 +5,8 @@ extends Node
 ## Para trocar uma tecla ou botão, basta mudar os dicionários abaixo.
 
 const TECLADOS := {
-	"teclado1": {
+	"teclado1":
+	{
 		"cima": [KEY_W],
 		"baixo": [KEY_S],
 		"esquerda": [KEY_A],
@@ -14,7 +15,8 @@ const TECLADOS := {
 		"invisivel": [KEY_G],
 		"lingua": [KEY_H],
 	},
-	"teclado2": {
+	"teclado2":
+	{
 		"cima": [KEY_UP],
 		"baixo": [KEY_DOWN],
 		"esquerda": [KEY_LEFT],
@@ -33,6 +35,7 @@ const BOTOES_PAD := {
 	"lingua": [JOY_BUTTON_X],
 }
 ## Eixos do controle: [eixo, sentido]. Apenas o analógico esquerdo move.
+## O analógico direito mira (lido direto em camaleao.gd, sem ação aqui).
 const EIXOS_PAD := {
 	"cima": [JOY_AXIS_LEFT_Y, -1.0],
 	"baixo": [JOY_AXIS_LEFT_Y, 1.0],
@@ -66,8 +69,16 @@ const INTERFACE_EIXOS_PAD := {
 const MAX_PADS := 8
 ## Zona morta do analógico esquerdo na arena (evita drift sem perder precisão).
 const ZONA_MORTA := 0.22
+## Mesmo para o analógico direito (mira da língua e do golpe), medido no círculo todo.
+const ZONA_MORTA_MIRA := 0.35
 ## Zona morta mais alta na navegação de menus com o analógico esquerdo.
 const ZONA_MORTA_INTERFACE := 0.45
+## Nomes curtos dos botões para mostrar na tela (lobby).
+const NOMES_TECLADO := {
+	"teclado1": {"golpe": "F", "invisivel": "G", "lingua": "H", "lados": "A/D", "cima_baixo": "W/S"},
+	"teclado2": {"golpe": ".", "invisivel": ",", "lingua": ";", "lados": "direcional", "cima_baixo": "direcional"},
+}
+const NOMES_PAD := {"golpe": "A", "invisivel": "B", "lingua": "X", "pausa": "Start", "lados": "analógico", "cima_baixo": "analógico"}
 
 
 func _ready() -> void:
@@ -196,14 +207,6 @@ func descricao(controle: String) -> String:
 		var rotulo := "Xbox %d" % (aparelho + 1) if eh_xbox(aparelho) else "controle %d" % (aparelho + 1)
 		return "%s, A/B/X" % rotulo
 	return "bot"
-
-
-## Nomes curtos dos botões para mostrar na tela (lobby).
-const NOMES_TECLADO := {
-	"teclado1": {"golpe": "F", "invisivel": "G", "lingua": "H", "lados": "A/D", "cima_baixo": "W/S"},
-	"teclado2": {"golpe": ".", "invisivel": ",", "lingua": ";", "lados": "direcional", "cima_baixo": "direcional"},
-}
-const NOMES_PAD := {"golpe": "A", "invisivel": "B", "lingua": "X", "pausa": "Start", "lados": "analógico", "cima_baixo": "analógico"}
 
 
 ## Nome curto do botão de uma ação para mostrar na tela (ex.: "F", ".", "A").

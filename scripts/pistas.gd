@@ -23,7 +23,7 @@ const COR_PEGADA_MOLHADA := Color(0.25, 0.32, 0.38, 0.55)
 const PES := Desenho.PES
 
 var mapa: Dictionary = {}
-var _estado: Dictionary = {} # camaleão -> {"antes", "andado", "parado"}
+var _estado: Dictionary = {}  # camaleão -> {"antes", "andado", "parado"}
 
 
 func _physics_process(delta: float) -> void:
