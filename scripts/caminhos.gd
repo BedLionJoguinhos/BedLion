@@ -20,7 +20,7 @@ const FOLGA_AGUA := 10.0
 ## Os pés (o ponto que afunda) ficam um pouco abaixo do centro.
 const PES := Desenho.PES
 
-static var _grades: Dictionary = {} # nome do mapa -> AStarGrid2D
+static var _grades: Dictionary = {}  # nome do mapa -> AStarGrid2D
 
 
 static func grade(mapa: Dictionary) -> AStarGrid2D:
@@ -46,8 +46,7 @@ static func grade(mapa: Dictionary) -> AStarGrid2D:
 ## Um camaleão com o centro aqui bate em parede/cerca ou cai na água?
 static func bloqueado(mapa: Dictionary, ponto: Vector2) -> bool:
 	var margem := CERCA + FOLGA_PAREDE
-	if ponto.x < margem or ponto.y < margem or ponto.x > TAMANHO_ARENA.x - margem \
-			or ponto.y > TAMANHO_ARENA.y - margem:
+	if ponto.x < margem or ponto.y < margem or ponto.x > TAMANHO_ARENA.x - margem or ponto.y > TAMANHO_ARENA.y - margem:
 		return true
 	for item in mapa.get("paredes", []):
 		var parede: Rect2 = item
@@ -100,5 +99,5 @@ static func caminho(mapa: Dictionary, de: Vector2, ate: Vector2) -> Array[Vector
 	for i in range(1, celulas.size()):
 		pontos.append(centro(celulas[i]))
 	if not pontos.is_empty() and not bloqueado(mapa, ate):
-		pontos[pontos.size() - 1] = ate # o último é o destino de verdade
+		pontos[pontos.size() - 1] = ate  # o último é o destino de verdade
 	return pontos

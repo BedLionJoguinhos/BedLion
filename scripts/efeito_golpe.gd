@@ -7,8 +7,8 @@ const DURACAO := 0.15
 
 var direcao := Vector2.RIGHT
 var alcance := 95.0
-var abertura := 1.5 # radianos para cada lado da direção
-var alcance_colado := 50.0 # raio de eliminação colada (360 graus)
+var abertura := 1.5  # radianos para cada lado da direção
+var alcance_colado := 50.0  # raio de eliminação colada (360 graus)
 var acertou := false
 var _tempo := 0.0
 

@@ -34,7 +34,7 @@ O jogo suporta até 4 participantes simultâneos via teclado e controles externo
 | :--- | :--- | :--- | :--- | :--- |
 | **Teclado 1** | `W`, `A`, `S`, `D` | `F` | `G` | `H` |
 | **Teclado 2** | Setas direcionais | `.` (ou Numpad 1) | `,` (ou Numpad 2) | `;` / `/` (ou Numpad 3) |
-| **Controle** | Analógico esquerdo ou direcional | `A` ou `RB` | `B`, `LB` ou `LT` | `X` ou `RT` |
+| **Controle** | Analógico esquerdo | `A` | `B` | `X` |
 
 ### Atalhos
 - **Esc:** Retorna ao menu principal ou sai da tela atual.

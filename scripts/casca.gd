@@ -9,7 +9,7 @@ const Desenho := preload("res://scripts/desenho_camaleao.gd")
 const EfeitoMorte := preload("res://scripts/efeito_morte.gd")
 
 const DURACAO := 8.0
-const TEMPO_MURCHAR := 0.6 # no fim ela vai murchando e ficando transparente
+const TEMPO_MURCHAR := 0.6  # no fim ela vai murchando e ficando transparente
 ## Tamanho para a língua e o golpe acertarem (igual ao de um camaleão).
 const RAIO := 18.0
 const COR_PUF := Color(0.95, 0.93, 0.85)

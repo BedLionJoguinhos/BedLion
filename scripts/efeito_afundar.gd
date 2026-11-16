@@ -13,8 +13,8 @@ var cor := Color.WHITE
 var olhando_direita := true
 var mostrar_corpo := true
 var _tempo := 0.0
-var _gotas: Array = [] # [direção, velocidade, tamanho]
-var _respingo: Node2D # desenha ondas e gotas por cima do corpo
+var _gotas: Array = []  # [direção, velocidade, tamanho]
+var _respingo: Node2D  # desenha ondas e gotas por cima do corpo
 
 
 func _ready() -> void:
@@ -23,7 +23,7 @@ func _ready() -> void:
 	_respingo.draw.connect(_desenhar_respingo)
 	add_child(_respingo)
 	for i in 10:
-		var angulo := -PI / 2.0 + randf_range(-1.2, 1.2) # para cima, abrindo para os lados
+		var angulo := -PI / 2.0 + randf_range(-1.2, 1.2)  # para cima, abrindo para os lados
 		_gotas.append([Vector2.from_angle(angulo), randf_range(80.0, 160.0), randf_range(2.5, 4.5)])
 
 
@@ -46,13 +46,12 @@ func _draw() -> void:
 	var escala := Desenho.ESCALA_JOGO * (1.0 - afundou * 0.6)
 	var base := Transform2D(0.0, Vector2(escala, escala), 0.0, Vector2(0, afundou * 18.0))
 	var cor_corpo := cor.lerp(Color(0.25, 0.58, 0.78), afundou * 0.6)
-	Desenho.desenhar(self, base, cor_corpo, Vector2.RIGHT if olhando_direita else Vector2.LEFT,
-		olhando_direita, 0.0)
+	Desenho.desenhar(self, base, cor_corpo, Vector2.RIGHT if olhando_direita else Vector2.LEFT, olhando_direita, 0.0)
 
 
 func _desenhar_respingo() -> void:
 	var t := _tempo / DURACAO
-	var pes := Desenho.PES # onde o corpo encosta na água
+	var pes := Desenho.PES  # onde o corpo encosta na água
 
 	# Ondas que se abrem (achatadas, como se fossem no chão).
 	_respingo.draw_set_transform(pes, 0.0, Vector2(1.0, 0.45))
@@ -71,5 +70,5 @@ func _desenhar_respingo() -> void:
 		var segundos := _tempo
 		var ponto := pes + direcao * velocidade * segundos + Vector2(0, 420.0 * segundos * segundos)
 		if ponto.y > pes.y + 4.0:
-			continue # já caiu de volta na água
+			continue  # já caiu de volta na água
 		_respingo.draw_circle(ponto, tamanho, Color(COR_ONDA, 1.0 - t))
