@@ -49,8 +49,8 @@ const PES := Desenho.PES
 ## Distância máxima entre os centros dos dois camaleões para o golpe matar.
 ## Cada camaleão tem raio 18, então 95 deixa uns 60 px de folga entre eles.
 const ALCANCE_GOLPE := 95.0
-## Abertura do golpe para cada lado da direção em que ele olha (1.5 rad = uns 85°).
-const ANGULO_GOLPE := 1.5
+## Abertura do golpe para cada lado da direção em que ele olha (60°).
+const ANGULO_GOLPE := deg_to_rad(60.0)
 ## Quem estiver mais perto que isso (centro a centro) é acertado de qualquer lado.
 const DISTANCIA_COLADO := 50.0
 const RECARGA_GOLPE := 0.5
@@ -195,7 +195,7 @@ func _physics_process(delta: float) -> void:
 
 	if _sendo_puxado():
 		_mirando = false
-		_ser_arrastado(delta, quer_golpear or quer_lingua, quer_golpear)
+		_ser_arrastado(delta, quer_golpear or quer_lingua, quer_golpear, mira)
 		return
 
 	if _tempo_grudado > 0.0:
@@ -262,11 +262,14 @@ func _physics_process(delta: float) -> void:
 ## Vector2.ZERO = não está mirando (vale a direção em que olha).
 func _ler_mira() -> Vector2:
 	var mira := Vector2.ZERO
-	if controle.begins_with("pad"):
-		var aparelho := int(controle.substr(3))
-		mira = Vector2(Input.get_joy_axis(aparelho, JOY_AXIS_RIGHT_X), Input.get_joy_axis(aparelho, JOY_AXIS_RIGHT_Y))
-		if mira.length() < Controles.ZONA_MORTA_MIRA:
-			return Vector2.ZERO
+	var aparelho := Controles.dispositivo_de(controle)
+	if aparelho >= 0:
+		var prefixo := controle + "_mira_"
+		mira = Input.get_vector(prefixo + "esquerda", prefixo + "direita", prefixo + "cima", prefixo + "baixo", Controles.ZONA_MORTA_MIRA)
+		if mira == Vector2.ZERO:
+			var eixos := Vector2(Input.get_joy_axis(aparelho, JOY_AXIS_RIGHT_X), Input.get_joy_axis(aparelho, JOY_AXIS_RIGHT_Y))
+			if eixos.length() >= Controles.ZONA_MORTA_MIRA:
+				mira = eixos
 	elif mira_com_setas:
 		mira = Input.get_vector("teclado2_esquerda", "teclado2_direita", "teclado2_cima", "teclado2_baixo")
 	return mira.normalized()
@@ -612,7 +615,7 @@ func _sendo_puxado() -> bool:
 
 ## Enquanto é puxado: vai em direção a quem puxou, sem poder andar.
 ## Depois de TEMPO_ATE_SE_SOLTAR, apertar língua ou golpe solta (o golpe também bate).
-func _ser_arrastado(delta: float, tentou_soltar: bool, golpeou: bool) -> void:
+func _ser_arrastado(delta: float, tentou_soltar: bool, golpeou: bool, mira := Vector2.ZERO) -> void:
 	_tempo_puxado += delta
 	# Fica virado para quem puxa, então o golpe ao se soltar vai na direção dele.
 	var para_quem_puxa := position.direction_to(puxado_por.position)
@@ -625,6 +628,10 @@ func _ser_arrastado(delta: float, tentou_soltar: bool, golpeou: bool) -> void:
 	_passo = 0.0
 	if tentou_soltar and _tempo_puxado >= TEMPO_ATE_SE_SOLTAR:
 		puxado_por.soltar_lingua(RECARGA_SOLTAR)
+		if golpeou and mira != Vector2.ZERO:
+			direcao = mira.normalized()
+			if absf(direcao.x) > 0.1:
+				_olhando_direita = direcao.x > 0.0
 		if golpeou:
 			_golpear()
 	queue_redraw()

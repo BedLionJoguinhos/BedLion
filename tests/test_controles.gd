@@ -42,10 +42,14 @@ func test_acoes_obrigatorias_teclado() -> void:
 
 
 func test_configuracao_gamepad() -> void:
-	assert_true(Controles.BOTOES_PAD.get("golpe", []) == [JOY_BUTTON_A], "Golpe usa exclusivamente o botão A (sem RB)")
-	assert_true(Controles.BOTOES_PAD.get("invisivel", []) == [JOY_BUTTON_B], "Invisibilidade usa exclusivamente o botão B (sem LB nem Y)")
-	assert_true(Controles.BOTOES_PAD.get("lingua", []) == [JOY_BUTTON_X], "Língua usa exclusivamente o botão X")
-	assert_true(not Controles.EIXOS_PAD.has("lingua") and not Controles.EIXOS_PAD.has("invisivel"), "Gatilhos LT e RT não estão mapeados")
+	assert_true(Controles.BOTOES_PAD.get("invisivel", []) == [JOY_BUTTON_A], "Invisibilidade usa exclusivamente o botão A")
+	assert_true(not Controles.BOTOES_PAD.has("golpe") and not Controles.BOTOES_PAD.has("lingua"), "Golpe e língua não usam botões face no controle")
+	assert_true(Controles.EIXOS_PAD.get("lingua", []) == [JOY_AXIS_TRIGGER_LEFT, 1.0], "Língua usa o gatilho esquerdo LT")
+	assert_true(Controles.EIXOS_PAD.get("golpe", []) == [JOY_AXIS_TRIGGER_RIGHT, 1.0], "Golpe usa o gatilho direito RT")
+	assert_true(Controles.EIXOS_MIRA_PAD.get("mira_cima", []) == [JOY_AXIS_RIGHT_Y, -1.0], "Mira cima usa analógico direito Y-")
+	assert_true(Controles.EIXOS_MIRA_PAD.get("mira_baixo", []) == [JOY_AXIS_RIGHT_Y, 1.0], "Mira baixo usa analógico direito Y+")
+	assert_true(Controles.EIXOS_MIRA_PAD.get("mira_esquerda", []) == [JOY_AXIS_RIGHT_X, -1.0], "Mira esquerda usa analógico direito X-")
+	assert_true(Controles.EIXOS_MIRA_PAD.get("mira_direita", []) == [JOY_AXIS_RIGHT_X, 1.0], "Mira direita usa analógico direito X+")
 	assert_true(
 		(
 			not Controles.BOTOES_PAD.has("cima")
@@ -59,7 +63,7 @@ func test_configuracao_gamepad() -> void:
 
 
 func test_input_map_pads_e_deadzones() -> void:
-	var acoes := ["cima", "baixo", "esquerda", "direita", "golpe", "invisivel", "lingua"]
+	var acoes := ["cima", "baixo", "esquerda", "direita", "golpe", "invisivel", "lingua", "mira_cima", "mira_baixo", "mira_esquerda", "mira_direita"]
 	for pad in Controles.MAX_PADS:
 		for acao in acoes:
 			var nome := "pad%d_%s" % [pad, acao]
@@ -70,6 +74,18 @@ func test_input_map_pads_e_deadzones() -> void:
 	for dir in ["cima", "baixo", "esquerda", "direita"]:
 		var evs := InputMap.action_get_events("pad0_%s" % dir)
 		assert_true(evs.all(func(e): return e is InputEventJoypadMotion), "Movimento '%s' aceita exclusivamente o analógico esquerdo" % dir)
+
+	var evs_invisivel := InputMap.action_get_events("pad0_invisivel")
+	assert_true(evs_invisivel.all(func(e): return e is InputEventJoypadButton and e.button_index == JOY_BUTTON_A), "pad0_invisivel usa JOY_BUTTON_A")
+	var evs_lingua := InputMap.action_get_events("pad0_lingua")
+	assert_true(evs_lingua.all(func(e): return e is InputEventJoypadMotion and e.axis == JOY_AXIS_TRIGGER_LEFT), "pad0_lingua usa LT")
+	var evs_golpe := InputMap.action_get_events("pad0_golpe")
+	assert_true(evs_golpe.all(func(e): return e is InputEventJoypadMotion and e.axis == JOY_AXIS_TRIGGER_RIGHT), "pad0_golpe usa RT")
+	for dir_mira in ["mira_cima", "mira_baixo", "mira_esquerda", "mira_direita"]:
+		var nome_mira := "pad0_%s" % dir_mira
+		var evs_mira := InputMap.action_get_events(nome_mira)
+		assert_true(evs_mira.all(func(e): return e is InputEventJoypadMotion), "Ação '%s' usa eixo do analógico direito" % nome_mira)
+		assert_true(is_equal_approx(InputMap.action_get_deadzone(nome_mira), Controles.ZONA_MORTA_MIRA), "Ação '%s' usa ZONA_MORTA_MIRA" % nome_mira)
 
 	assert_true(is_equal_approx(InputMap.action_get_deadzone("pad0_esquerda"), Controles.ZONA_MORTA), "Ação de movimento usa ZONA_MORTA padrão (0.22)")
 	assert_true(is_equal_approx(InputMap.action_get_deadzone("pad0_golpe"), Controles.ZONA_MORTA), "Ação de combate usa ZONA_MORTA padrão (0.22)")

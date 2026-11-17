@@ -487,7 +487,7 @@ func _desenhar_vagas() -> void:
 				var piscar := 0.6 + 0.4 * sin(_tempo * 4.0)
 				_texto(fonte, Vector2(meio, cartao.position.y + 180), "Aperte golpe", 28, Color(1, 1, 1, piscar))
 				_texto(fonte, Vector2(meio, cartao.position.y + 215), "para entrar", 28, Color(1, 1, 1, piscar))
-				_texto(fonte, Vector2(meio, cartao.position.y + 270), "F  /  .  /  A", 24, Color(Ui.AMARELO, piscar))
+				_texto(fonte, Vector2(meio, cartao.position.y + 270), "F  /  .  /  RT", 24, Color(Ui.AMARELO, piscar))
 			else:
 				_texto(fonte, Vector2(meio, cartao.position.y + 200), "vazio", 24, Color(1, 1, 1, 0.4))
 

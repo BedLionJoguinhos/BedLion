@@ -28,19 +28,25 @@ const TECLADOS := {
 	},
 }
 
-## Botões do controle (padrão Xbox: A, B e X).
+## Botões do controle (padrão Xbox: A para invisibilidade).
 const BOTOES_PAD := {
-	"golpe": [JOY_BUTTON_A],
-	"invisivel": [JOY_BUTTON_B],
-	"lingua": [JOY_BUTTON_X],
+	"invisivel": [JOY_BUTTON_A],
 }
-## Eixos do controle: [eixo, sentido]. Apenas o analógico esquerdo move.
-## O analógico direito mira (lido direto em camaleao.gd, sem ação aqui).
+## Eixos do controle: [eixo, sentido]. Analógico esquerdo move; LT é a língua e RT é o golpe.
 const EIXOS_PAD := {
 	"cima": [JOY_AXIS_LEFT_Y, -1.0],
 	"baixo": [JOY_AXIS_LEFT_Y, 1.0],
 	"esquerda": [JOY_AXIS_LEFT_X, -1.0],
 	"direita": [JOY_AXIS_LEFT_X, 1.0],
+	"lingua": [JOY_AXIS_TRIGGER_LEFT, 1.0],
+	"golpe": [JOY_AXIS_TRIGGER_RIGHT, 1.0],
+}
+## Eixos do analógico direito (mira da língua e do golpe): [eixo, sentido].
+const EIXOS_MIRA_PAD := {
+	"mira_cima": [JOY_AXIS_RIGHT_Y, -1.0],
+	"mira_baixo": [JOY_AXIS_RIGHT_Y, 1.0],
+	"mira_esquerda": [JOY_AXIS_RIGHT_X, -1.0],
+	"mira_direita": [JOY_AXIS_RIGHT_X, 1.0],
 }
 ## Teclas e botões extras nas ações nativas de interface (menus e configurações).
 const INTERFACE_TECLAS := {
@@ -78,7 +84,7 @@ const NOMES_TECLADO := {
 	"teclado1": {"golpe": "F", "invisivel": "G", "lingua": "H", "lados": "A/D", "cima_baixo": "W/S"},
 	"teclado2": {"golpe": ".", "invisivel": ",", "lingua": ";", "lados": "direcional", "cima_baixo": "direcional"},
 }
-const NOMES_PAD := {"golpe": "A", "invisivel": "B", "lingua": "X", "pausa": "Start", "lados": "analógico", "cima_baixo": "analógico"}
+const NOMES_PAD := {"golpe": "RT", "invisivel": "A", "lingua": "LT", "pausa": "Start", "lados": "analógico", "cima_baixo": "analógico"}
 
 
 func _ready() -> void:
@@ -105,6 +111,15 @@ func _ready() -> void:
 		for acao in EIXOS_PAD:
 			var nome := _criar_acao("pad%d_%s" % [pad, acao], ZONA_MORTA)
 			var eixo: Array = EIXOS_PAD[acao]
+			var movimento := InputEventJoypadMotion.new()
+			movimento.device = pad
+			movimento.axis = eixo[0]
+			movimento.axis_value = eixo[1]
+			if not InputMap.action_has_event(nome, movimento):
+				InputMap.action_add_event(nome, movimento)
+		for acao in EIXOS_MIRA_PAD:
+			var nome := _criar_acao("pad%d_%s" % [pad, acao], ZONA_MORTA_MIRA)
+			var eixo: Array = EIXOS_MIRA_PAD[acao]
 			var movimento := InputEventJoypadMotion.new()
 			movimento.device = pad
 			movimento.axis = eixo[0]
@@ -205,7 +220,7 @@ func descricao(controle: String) -> String:
 	var aparelho := dispositivo_de(controle)
 	if aparelho >= 0:
 		var rotulo := "Xbox %d" % (aparelho + 1) if eh_xbox(aparelho) else "controle %d" % (aparelho + 1)
-		return "%s, A/B/X" % rotulo
+		return "%s, RT/A/LT" % rotulo
 	return "bot"
 
 
