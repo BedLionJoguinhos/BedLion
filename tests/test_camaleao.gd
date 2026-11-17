@@ -81,7 +81,13 @@ func test_golpe_alcance_parede_e_empate() -> void:
 	a.direcao = Vector2.RIGHT
 	await avancar_fisica(2)
 
+	assert_approx(Camaleao.ANGULO_GOLPE, deg_to_rad(60.0), 0.001, "ANGULO_GOLPE reduzido para 60°")
 	assert_true(a._alcanca_golpe(b.position), "Golpe alcança inimigo na frente dentro de ALCANCE_GOLPE")
+	b.position = a.position + Vector2.from_angle(deg_to_rad(50.0)) * 80.0
+	assert_true(a._alcanca_golpe(b.position), "Golpe alcança inimigo a 50° dentro de 60°")
+	b.position = a.position + Vector2.from_angle(deg_to_rad(70.0)) * 80.0
+	assert_false(a._alcanca_golpe(b.position), "Golpe não alcança inimigo a 70° fora do cone de 60°")
+	b.position = Vector2(380, 300)
 	a.direcao = Vector2.LEFT
 	assert_false(a._alcanca_golpe(b.position), "Golpe não acerta inimigo atrás fora de DISTANCIA_COLADO")
 
@@ -326,5 +332,66 @@ func test_recolher_lingua_e_mira() -> void:
 	assert_eq(c._ler_mira(), Vector2.ZERO, "_ler_mira() retorna ZERO sem entrada de mira")
 	c.controle = "pad0"
 	assert_eq(c._ler_mira(), Vector2.ZERO, "_ler_mira() no gamepad retorna ZERO com analógico direito em repouso")
+
+	# Gamepad: analógico esquerdo anda para a esquerda enquanto analógico direito mira para cima/diagonal
+	c.bot = ""
+	c.set_physics_process(false)
+	c.position = Vector2(500, 500)
+	c.set("_recarga_lingua", 0.0)
+	c.set("_recarga_golpe", 0.0)
+	c.set("_recarga_invisibilidade", 0.0)
+	await arvore().process_frame
+	Input.action_press("pad0_esquerda")
+	Input.action_press("pad0_mira_cima")
+	var mira_cima: Vector2 = c._ler_mira()
+	assert_approx(mira_cima.angle(), Vector2.UP.angle(), 0.01, "_ler_mira() lê direção do analógico direito")
+
+	# Dispara língua com LT mirando para cima enquanto anda para a esquerda
+	Input.action_press("pad0_lingua")
+	c._physics_process(0.016)
+	Input.action_release("pad0_lingua")
+	assert_eq(c.get("_estado_lingua"), "indo", "LT lança a língua mesmo andando para outro lado")
+	assert_approx(c.direcao.angle(), Vector2.UP.angle(), 0.01, "Língua sai na direção da mira do analógico direito")
+
+	# Recolher a língua com golpe (RT) mirando para a direita acerta alvo na mira (e não na direção de movimento)
+	alvo.position = Vector2(570, 500)
+	var alvo_morreu := [0]
+	alvo.morreu.connect(func(_q): alvo_morreu[0] += 1)
+	Input.action_release("pad0_mira_cima")
+	Input.action_press("pad0_mira_direita")
+	Input.action_press("pad0_golpe")
+	c._physics_process(0.016)
+	Input.action_release("pad0_golpe")
+	assert_true(c.get("_mirando"), "Analógico direito ativa indicador _mirando")
+	assert_approx(c.direcao.angle(), Vector2.RIGHT.angle(), 0.01, "RT recolhe língua e direciona golpe pelo analógico direito")
+	await avancar_fisica(2)
+	assert_eq(alvo_morreu[0], 1, "Golpe direcionado pelo analógico direito acerta alvo na mira")
+
+	# Soltar-se de puxada golpeando (RT) com analógico direito mira o contra-ataque
+	await arvore().process_frame
+	var puxador := criar_camaleao_teste(arena, Vector2(400, 500))
+	c.position = Vector2(500, 500)
+	c.set("_recarga_golpe", 0.0)
+	puxador.set("_dados_lingua", Linguas.TIPOS[Linguas.BASICA])
+	puxador._comecar_puxada(c)
+	c.set("_tempo_puxado", Camaleao.TEMPO_ATE_SE_SOLTAR + 0.05)
+	Input.action_release("pad0_mira_direita")
+	Input.action_press("pad0_mira_cima")
+	Input.action_press("pad0_golpe")
+	c._physics_process(0.016)
+	Input.action_release("pad0_golpe")
+	Input.action_release("pad0_mira_cima")
+	assert_eq(c.puxado_por, null, "RT solta da puxada do adversário")
+	assert_approx(c.direcao.angle(), Vector2.UP.angle(), 0.01, "Contra-ataque ao se soltar respeita mira do analógico direito")
+	await avancar_fisica(2)
+
+	# Botão A segura carga de invisibilidade
+	await arvore().process_frame
+	Input.action_release("pad0_esquerda")
+	c.set("_recarga_invisibilidade", 0.0)
+	Input.action_press("pad0_invisivel")
+	c._physics_process(0.2)
+	assert_true(c.get("_carga_invisivel") > 0.0, "Botão A carrega invisibilidade no controle")
+	Input.action_release("pad0_invisivel")
 
 	limpar_arena(arena)
