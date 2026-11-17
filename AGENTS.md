@@ -16,4 +16,4 @@
 ## Verificação Obrigatória Após Alterações
 1. `HOME=/tmp godot --headless --path . -s tools/validate_project.gd`
 2. `HOME=/tmp godot --headless --path . -s tests/test_runner.gd`
-3. Se houver alteração de regras/lógica em `scripts/`, valide cobertura com `python3 tools/gd_coverage.py --min-coverage 60`.
+3. Se houver alteração de regras/lógica em `scripts/`, valide cobertura com `python3 tools/gd_coverage.py --min-coverage 80`.

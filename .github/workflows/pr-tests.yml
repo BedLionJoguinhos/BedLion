@@ -77,7 +77,7 @@ jobs:
       - name: Collect GDScript Line Coverage (LCOV)
         run: |
           python3 tools/gd_coverage.py \
-            --min-coverage 60 \
+            --min-coverage 80 \
             --fuzz-seed "$FUZZ_SEED" \
             --fuzz-iterations "$FUZZ_ITERATIONS"
           cat coverage/summary.md >> "$GITHUB_STEP_SUMMARY"

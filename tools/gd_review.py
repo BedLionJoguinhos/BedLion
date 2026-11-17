@@ -22,7 +22,7 @@ FUNC_DEF_RE = re.compile(r"^(\t*)(?:static\s+)?func\s+([A-Za-z_][A-Za-z0-9_]*)\s
 UNTYPED_VAR_RE = re.compile(r"^\t*var\s+([A-Za-z_][A-Za-z0-9_]*)\s*=(?!=)")
 PRINT_CALL_RE = re.compile(r"\b(?:print|print_debug|prints|printt)\s*\(")
 LOAD_CALL_RE = re.compile(r"(?<!pre)\bload\s*\(")
-TODO_RE = re.compile(r"#.*\b(TODO|FIXME|HACK|XXX)\b", re.IGNORECASE)
+TODO_RE = re.compile(r"#.*\b(TODO|FIXME|HACK|XXX)\b")
 HUNK_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
 
 
