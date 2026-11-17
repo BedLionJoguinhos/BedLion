@@ -78,7 +78,7 @@ jobs:
 
       - name: Collect Coverage (LCOV + JSON)
         run: |
-          python3 tools/gd_coverage.py --min-coverage 60
+          python3 tools/gd_coverage.py --min-coverage 80
 
       - name: Run Godot Best-Practices & Diff Coverage Review
         id: review
@@ -90,7 +90,7 @@ jobs:
             --gdlint-log gdlint.log \
             --gdformat-status "${{ steps.gdformat.outputs.status }}" \
             --validate-status "${{ steps.validate.outputs.status }}" \
-            --min-coverage 60 \
+            --min-coverage 80 \
             --fail-on-error
           cat review/report.md >> "$GITHUB_STEP_SUMMARY"
 

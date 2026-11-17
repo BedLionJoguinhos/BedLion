@@ -29,7 +29,7 @@ godot --headless --path . -s tests/test_runner.gd -- --suite=fuzzy
 godot --headless --path . -s tools/validate_project.gd
 
 # Cobertura de linhas GDScript (gera coverage/lcov.info, coverage.json e summary.md)
-python3 tools/gd_coverage.py --min-coverage 40
+python3 tools/gd_coverage.py --min-coverage 80
 
 # Análise de boas práticas e revisão de código
 python3 tools/gd_review.py --coverage-json coverage/coverage.json --validate-status pass

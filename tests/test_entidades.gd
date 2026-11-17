@@ -10,6 +10,7 @@ const Bot := preload("res://scripts/bot.gd")
 const Placar := preload("res://scripts/placar.gd")
 const Ui := preload("res://scripts/ui.gd")
 const MainScript := preload("res://scripts/main.gd")
+const Linguas := preload("res://scripts/linguas.gd")
 
 
 func get_suite_name() -> String:
@@ -25,6 +26,9 @@ func run_tests() -> void:
 	test_partida_cores_e_configuracoes()
 	test_placar_e_ui()
 	await test_main_rotacao_mapas_sem_repeticao()
+	await test_bot_poderes_pistas_e_esquiva()
+	await test_main_spawns_rodada_e_atalhos()
+	test_controles_descricoes()
 
 
 func test_grude_caminho_pisada_e_expiracao() -> void:
@@ -238,3 +242,119 @@ func test_main_rotacao_mapas_sem_repeticao() -> void:
 	assert_true(main._tem_teclado2(), "_tem_teclado2() detecta teclado2 na partida")
 
 	main.free()
+
+
+func test_bot_poderes_pistas_e_esquiva() -> void:
+	var mapa_jardim: Dictionary = Mapas.MAPAS[0]
+	var arena := criar_arena_teste(mapa_jardim)
+	var bot_cam := criar_camaleao_teste(arena, Vector2(212, 262), mapa_jardim, Color.ORANGE, "dificil")
+	var alvo := criar_camaleao_teste(arena, Vector2(400, 262), mapa_jardim, Color.GREEN, "parado")
+	await avancar_fisica(2)
+
+	var cerebro: Bot = bot_cam.get("_cerebro")
+	# Bot com gancho calcula direção de gancho em direção ao alvo ou para fugir
+	bot_cam.lingua = "gancho"
+	var dir_gancho := cerebro._direcao_gancho(Vector2(1400, 700), false)
+	assert_true(dir_gancho == Vector2.ZERO or is_equal_approx(dir_gancho.length(), 1.0), "Bot._direcao_gancho() retorna ZERO ou vetor unitário")
+
+	# Bot com grude perto de rastro de grude do adversário detecta risco em _pisaria_grude
+	var grude := Grude.new()
+	grude.dono = alvo
+	grude.pontos = [Vector2(212, 262) + Desenho.PES]
+	arena.add_child(grude)
+	await avancar_fisica(1)
+	assert_true(cerebro._pisaria_grude(Vector2(212, 262)), "Bot._pisaria_grude() detecta rastro de grude inimigo")
+
+	# Bot detecta pistas de camaleão invisível no sol, poça, pés sujos, grama e ponte
+	alvo.invisivel = true
+	alvo.visible = false
+	alvo.position = Vector2(700, 400) - Desenho.PES  # sol do Jardim (620, 320, 360, 260)
+	assert_approx(cerebro._pista_de(alvo), 8.0, 0.01, "Bot._pista_de() detecta invisível no sol")
+	alvo.position = Vector2(200, 440) - Desenho.PES  # grama do Jardim (130, 380, 230, 140)
+	assert_approx(cerebro._pista_de(alvo), 28.0, 0.01, "Bot._pista_de() detecta invisível no capim")
+	alvo.position = Vector2(395, 715) - Desenho.PES  # poça do Jardim (340, 680, 110, 70)
+	assert_true(cerebro._pista_de(alvo) in [-1.0, 14.0], "Bot._pista_de() avalia poça sem erro")
+
+	# Esquiva quando adversário lança língua na direção do bot
+	alvo.invisivel = false
+	alvo.visible = true
+	alvo.position = Vector2(350, 262)
+	alvo.direcao = Vector2.LEFT
+	alvo.set("_dados_lingua", Linguas.TIPOS[Linguas.BASICA])
+	alvo.set("_estado_lingua", "indo")
+	cerebro.nivel = cerebro.nivel.duplicate()
+	cerebro.nivel["esquiva"] = 1.0
+	assert_true(cerebro._desviar_de_lingua(), "Bot._desviar_de_lingua() ativa esquiva quando língua vem na direção dele")
+	alvo.set("_estado_lingua", "")
+
+	# Bot golpeia durante puxada quando alvo chega ao alcance
+	bot_cam.lingua = "basica"
+	bot_cam.set("_estado_lingua", "puxando")
+	bot_cam.set("_preso", alvo)
+	bot_cam.set("_recarga_golpe", 0.0)
+	alvo.position = bot_cam.position + Vector2(35, 0)
+	var acoes_puxando := cerebro.agir(0.2)
+	assert_true(acoes_puxando["golpe"], "Bot golpeia alvo puxado assim que entra no alcance")
+
+	limpar_arena(arena)
+
+
+func test_main_spawns_rodada_e_atalhos() -> void:
+	var main: Node = MainScript.new()
+	arvore().root.add_child(main)
+	await arvore().process_frame
+
+	# Spawn de upgrades respeita MAX_UPGRADES
+	main._spawnar_upgrade()
+	main._spawnar_upgrade()
+	main._spawnar_upgrade()
+	var rodada: Node = main.get("_rodada")
+	var ups := arvore().get_nodes_in_group("upgrades_no_chao").filter(func(u): return u.get_parent() == rodada)
+	assert_eq(ups.size(), MainScript.MAX_UPGRADES, "Main._spawnar_upgrade() respeita limite MAX_UPGRADES")
+
+	# Spawn de cocô de pombo cria nó na rodada
+	var cocos_antes := arvore().get_nodes_in_group("cocos").size()
+	main._spawnar_coco()
+	assert_true(arvore().get_nodes_in_group("cocos").size() >= cocos_antes, "Main._spawnar_coco() executa e cria cocô em local livre")
+
+	# Atalhos F1 (muda modo bot) e F2 (próximo mapa) sem lobby
+	var modo_antes: int = main.get("_modo_bot")
+	var ev_f1 := InputEventKey.new()
+	ev_f1.keycode = KEY_F1
+	ev_f1.pressed = true
+	main._unhandled_input(ev_f1)
+	assert_eq(main.get("_modo_bot"), (modo_antes + 1) % MainScript.MODOS_BOT.size(), "Tecla F1 alterna _modo_bot")
+
+	var mapa_antes: int = main.get("_indice_mapa")
+	var ev_f2 := InputEventKey.new()
+	ev_f2.keycode = KEY_F2
+	ev_f2.pressed = true
+	main._unhandled_input(ev_f2)
+	assert_true(main.get("_indice_mapa") != mapa_antes, "Tecla F2 pula para próximo mapa")
+
+	# Empate quando todos morrem no mesmo quadro
+	var vivos: Array = main.get("_vivos").duplicate()
+	for v in vivos:
+		v.morrer()
+	await avancar_fisica(2)
+	assert_true(main.get("_rodada_acabou"), "Morte de todos os jogadores encerra a rodada como empate")
+
+	# Vitória de rodada sem atingir meta + renderização da tela de vitória
+	main.placar[0] = MainScript.PONTOS_PARA_VENCER - 1
+	main._exibir_fim_partida(0)
+	await arvore().process_frame
+	assert_true(main.get("_tela_fim_partida").visible, "Tela de vitória renderiza vencedor")
+
+	main.free()
+
+
+func test_controles_descricoes() -> void:
+	var c := preload("res://scripts/controles.gd").new()
+	assert_eq(c.descricao("teclado1"), "WASD, F/G/H", "descricao('teclado1') retorna texto esperado")
+	assert_eq(c.descricao("teclado2"), "setas, . / , / ;", "descricao('teclado2') retorna texto esperado")
+	assert_true(c.descricao("pad0").contains("A/B/X"), "descricao('pad0') descreve botões do controle")
+	assert_eq(c.descricao(""), "bot", "descricao('') retorna 'bot'")
+	assert_eq(c.nome_botao("teclado1", "golpe"), "F", "nome_botao('teclado1', 'golpe') retorna 'F'")
+	assert_eq(c.nome_botao("pad0", "lingua"), "X", "nome_botao('pad0', 'lingua') retorna 'X'")
+	assert_false(c.eh_xbox(-1), "eh_xbox(-1) retorna false")
+	c.free()

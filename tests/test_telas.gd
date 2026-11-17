@@ -10,17 +10,21 @@ func get_suite_name() -> String:
 
 
 func run_tests() -> void:
-	test_menu_instancia()
+	await test_menu_instancia()
 	test_configuracoes_volume_e_rotulo()
-	test_lobby_vagas_cores_e_bots()
+	await test_lobby_vagas_cores_e_bots()
+	await test_lobby_inputs_e_fluxo_completo()
 
 
 func test_menu_instancia() -> void:
 	var menu: Control = MenuScript.new()
 	arvore().root.add_child(menu)
+	await arvore().process_frame
 	assert_true(menu.get_child_count() >= 4, "Menu instancia fundo, enfeite, título e botões")
+	var tempo_antes: float = menu.get("_tempo")
 	menu._process(0.1)
-	assert_approx(menu.get("_tempo"), 0.1, 0.001, "Menu._process() avança animação de enfeite")
+	await arvore().process_frame
+	assert_true(menu.get("_tempo") >= tempo_antes + 0.1, "Menu._process() avança animação de enfeite")
 	menu.free()
 
 
@@ -49,6 +53,7 @@ func test_configuracoes_volume_e_rotulo() -> void:
 func test_lobby_vagas_cores_e_bots() -> void:
 	var lobby: Control = LobbyScript.new()
 	arvore().root.add_child(lobby)
+	await arvore().process_frame
 
 	assert_eq(lobby._humanos(), 0, "Lobby inicia com 0 jogadores humanos")
 	assert_false(lobby._todos_prontos(), "Lobby vazio não está pronto")
@@ -96,4 +101,74 @@ func test_lobby_vagas_cores_e_bots() -> void:
 	assert_eq(lobby.get("_etapa"), "entrar", "_voltar_para_entrar() retorna à etapa 1")
 	assert_false(vagas[0]["pronto"], "Voltar à etapa 1 desmarca prontidão")
 
+	await arvore().process_frame
 	lobby.free()
+
+
+func _simular_acao(acao: String, fn: Callable) -> void:
+	await arvore().process_frame
+	Input.action_press(acao)
+	fn.call()
+	Input.action_release(acao)
+
+
+func test_lobby_inputs_e_fluxo_completo() -> void:
+	var partida: Node = arvore().root.get_node("Partida")
+	var jogadores_orig: Array = partida.jogadores.duplicate(true)
+	var bots_orig: int = partida.quantidade_bots
+	var dif_orig: String = partida.dificuldade_bots
+
+	var lobby: Control = LobbyScript.new()
+	arvore().root.add_child(lobby)
+	lobby.set("_espera", 0.0)
+	await arvore().process_frame
+	lobby.set_process(false)
+
+	# Jogador 1 entra via ação de golpe, troca de cor, fica pronto, desfaz e sai
+	await _simular_acao("teclado1_golpe", func(): lobby._entrada_etapa_entrar("teclado1"))
+	assert_eq(lobby._humanos(), 1, "_entrada_etapa_entrar() adiciona jogador ao apertar golpe")
+
+	var vagas: Array = lobby.get("_vagas")
+	var cor_inicial: int = vagas[0]["cor"]
+	await _simular_acao("teclado1_direita", func(): lobby._entrada_etapa_entrar("teclado1"))
+	assert_true(vagas[0]["cor"] != cor_inicial, "Ação direita troca cor do jogador no lobby")
+	await _simular_acao("teclado1_esquerda", func(): lobby._entrada_etapa_entrar("teclado1"))
+	assert_eq(vagas[0]["cor"], cor_inicial, "Ação esquerda volta para cor anterior")
+
+	# Jogador 2 entra para testar pronto/desfazer sem pular direto para etapa 2
+	await _simular_acao("teclado2_golpe", func(): lobby._entrada_etapa_entrar("teclado2"))
+	await _simular_acao("teclado1_golpe", func(): lobby._entrada_etapa_entrar("teclado1"))
+	assert_true(vagas[0]["pronto"], "Apertar golpe na vaga marca prontidão")
+	await _simular_acao("teclado1_invisivel", func(): lobby._entrada_etapa_entrar("teclado1"))
+	assert_false(vagas[0]["pronto"], "Apertar invisível quando pronto desfaz prontidão")
+	await _simular_acao("teclado1_invisivel", func(): lobby._entrada_etapa_entrar("teclado1"))
+	assert_eq(lobby._humanos(), 1, "Apertar invisível sem estar pronto sai da vaga")
+
+	# Renderiza etapa entrar + avança com _continuar_com_mouse
+	lobby._process(0.1)
+	await arvore().process_frame
+	lobby._continuar_com_mouse()
+	assert_eq(lobby.get("_etapa"), "bots", "_continuar_com_mouse() avança para etapa de bots")
+
+	# Etapa bots: ajusta quantidade, muda linha, altera dificuldade e desenha vagas
+	await _simular_acao("teclado2_direita", func(): lobby._entrada_etapa_bots("teclado2"))
+	await _simular_acao("teclado2_baixo", func(): lobby._entrada_etapa_bots("teclado2"))
+	await _simular_acao("teclado2_direita", func(): lobby._entrada_etapa_bots("teclado2"))
+	lobby._process(0.1)
+	await arvore().process_frame
+
+	# Começar preenche Partida.jogadores e solicita troca de cena
+	lobby._comecar()
+	assert_true(partida.jogadores.size() >= 2, "Lobby._comecar() popula Partida.jogadores com humanos e bots")
+	await arvore().process_frame
+
+	# Limpa eventual cena carregada pelo change_scene_to_file.call_deferred
+	if arvore().current_scene != null:
+		arvore().unload_current_scene()
+		await arvore().process_frame
+	if is_instance_valid(lobby):
+		lobby.free()
+
+	partida.jogadores = jogadores_orig
+	partida.quantidade_bots = bots_orig
+	partida.dificuldade_bots = dif_orig
