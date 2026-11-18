@@ -19,7 +19,7 @@ extends RefCounted
 ## Campos de cada arma em ARMAS:
 ## - nome, cor: como aparece (texto ao pegar, desenho).
 ## - peso: chance de aparecer no mapa (maior = mais comum). Armas fortes têm peso baixo.
-## - municao: tiros (ou arremessos). Acabou, a arma some e o camaleão fica desarmado.
+## - municao: tiros (ou arremessos), em média (ver VARIACAO_MUNICAO). Acabou, a arma some e o camaleão fica desarmado.
 ## - recarga: segundos entre um tiro e outro.
 ## - projetil: "bala", "laser", "foguete" ou "bumerangue" (projetil.gd);
 ##   "raio" = acerta na hora em linha reta até a parede (sniper);
@@ -49,13 +49,19 @@ const JOGADORES_POR_ARMA := 3
 const INTERVALO_ARMA := 10.0
 const MAX_ARMAS_NO_CHAO := 2
 
+## --- Variação -----------------------------------------------------------------
+## Cada arma que aparece no mapa vem com a munição um pouco diferente: entre
+## (1 - VARIACAO_MUNICAO) e (1 + VARIACAO_MUNICAO) vezes o "municao" da tabela.
+## 0.25 = de 75% a 125%. 0.0 = sempre igual.
+const VARIACAO_MUNICAO := 0.25
+
 const ARMAS := {
 	"pistola":
 	{
 		"nome": "Pistola",
 		"cor": Color(0.75, 0.78, 0.82),
 		"peso": 10,
-		"municao": 5,
+		"municao": 10,
 		"recarga": 0.35,
 		"projetil": "bala",
 		"alcance": 620.0,
@@ -66,7 +72,7 @@ const ARMAS := {
 		"nome": "Espingarda",
 		"cor": Color(0.72, 0.5, 0.3),
 		"peso": 7,
-		"municao": 3,
+		"municao": 6,
 		"recarga": 1.1,
 		"projetil": "bala",
 		"alcance": 280.0,
@@ -79,7 +85,7 @@ const ARMAS := {
 		"nome": "Metralhadora",
 		"cor": Color(0.45, 0.5, 0.42),
 		"peso": 4,
-		"municao": 10,  # uma carga só: aperta uma vez, aquece e sai tudo
+		"municao": 20,  # uma carga só: aperta uma vez, aquece e sai tudo
 		"aquecimento": 1.0,
 		"intervalo": 0.15,
 		"desvio": 0.07,  # radianos de tremida em cada tiro
@@ -93,7 +99,7 @@ const ARMAS := {
 		"nome": "Sniper",
 		"cor": Color(0.3, 0.42, 0.75),
 		"peso": 3,
-		"municao": 3,
+		"municao": 6,
 		"recarga": 1.5,
 		"mira": 0.5,  # mira laser na tela antes do tiro sair
 		"projetil": "raio",
@@ -104,7 +110,7 @@ const ARMAS := {
 		"nome": "Laser",
 		"cor": Color(1.0, 0.25, 0.55),
 		"peso": 5,
-		"municao": 3,
+		"municao": 6,
 		"recarga": 0.5,
 		"projetil": "laser",
 		"alcance": 2200.0,  # caminho total, somando os quiques
@@ -116,7 +122,7 @@ const ARMAS := {
 		"nome": "Bazuca",
 		"cor": Color(0.4, 0.55, 0.3),
 		"peso": 2,
-		"municao": 2,
+		"municao": 4,
 		"recarga": 1.8,
 		"projetil": "foguete",
 		"alcance": 1100.0,
@@ -128,7 +134,7 @@ const ARMAS := {
 		"nome": "Bumerangue",
 		"cor": Color(0.9, 0.7, 0.3),
 		"peso": 6,
-		"municao": 3,
+		"municao": 6,
 		"recarga": 0.6,
 		"projetil": "bumerangue",  # só lança outro quando o anterior voltar ou sumir
 		"alcance": 420.0,
@@ -154,17 +160,29 @@ static func armas_no_inicio(jogadores: int) -> int:
 	return maxi(1, ceili(float(jogadores) / JOGADORES_POR_ARMA))
 
 
-## Sorteia um tipo de arma pelo "peso" (as fortes saem menos).
-static func sortear() -> String:
+## Sorteia um tipo de arma pelo "peso" (as fortes saem menos). Se passar
+## "evitar", essa arma não sai (para não aparecer a mesma duas vezes seguidas).
+static func sortear(evitar := "") -> String:
 	var total := 0
 	for tipo: String in ARMAS:
-		total += int(ARMAS[tipo]["peso"])
+		if tipo != evitar:
+			total += int(ARMAS[tipo]["peso"])
 	var sorteio := randi() % maxi(total, 1)
 	for tipo: String in ARMAS:
+		if tipo == evitar:
+			continue
 		sorteio -= int(ARMAS[tipo]["peso"])
 		if sorteio < 0:
 			return tipo
 	return "pistola"
+
+
+## Munição de uma arma que acabou de aparecer no mapa (varia um pouco, ver
+## VARIACAO_MUNICAO). Sempre pelo menos 1.
+static func municao_sorteada(tipo: String) -> int:
+	var base := float(ARMAS[tipo].get("municao", 0))
+	var fator := randf_range(1.0 - VARIACAO_MUNICAO, 1.0 + VARIACAO_MUNICAO)
+	return maxi(1, roundi(base * fator))
 
 
 ## A arma acaba por tempo (e não por munição)?
