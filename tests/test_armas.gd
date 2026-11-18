@@ -71,6 +71,24 @@ func test_configuracao_e_sorteio() -> void:
 		contagem[tipo] = int(contagem.get(tipo, 0)) + 1
 	assert_eq(contagem.size(), 8, "Sorteio pode sair qualquer arma")
 	assert_true(int(contagem["pistola"]) > int(contagem["bazuca"]) * 2, "Arma forte (bazuca) sai bem menos que a pistola")
+	var repetiu := false
+	for _i in 500:
+		if Armas.sortear("pistola") == "pistola":
+			repetiu = true
+	assert_false(repetiu, "Sorteio pode evitar repetir a última arma")
+	assert_eq(Armas.ARMAS["pistola"]["municao"], 10, "Pistola tem 10 tiros em média (dobrou)")
+	assert_false(Armas.ARMAS["eletrica"].has("municao"), "Língua elétrica segue por tempo, sem munição")
+	var menor := 1000
+	var maior := 0
+	for _i in 500:
+		var m := Armas.municao_sorteada("pistola")
+		menor = mini(menor, m)
+		maior = maxi(maior, m)
+	var base := 10.0
+	assert_true(menor >= roundi(base * (1.0 - Armas.VARIACAO_MUNICAO)), "Munição sorteada não fica abaixo do mínimo")
+	assert_true(maior <= roundi(base * (1.0 + Armas.VARIACAO_MUNICAO)), "Munição sorteada não passa do máximo")
+	assert_true(maior > menor, "Munição varia de uma arma para outra")
+	assert_eq(Armas.municao_sorteada("bazuca") >= 1, true, "Sempre vem pelo menos 1 tiro")
 
 
 func test_golpe_atordoa_empurra_e_derruba_arma() -> void:
@@ -163,15 +181,16 @@ func test_pistola_mata_e_acaba_municao() -> void:
 	var alvo := criar_camaleao_teste(arena, Vector2(500, 300))
 	var mortes := _contar_mortes(alvo)
 	_armar(c, "pistola")
-	assert_eq(c.arma.municao, 5, "Pistola começa com 5 tiros")
+	var cheia: int = Armas.ARMAS["pistola"]["municao"]
+	assert_eq(c.arma.municao, cheia, "Pistola começa com a munição da tabela")
 	await avancar_fisica(1)
 	c.direcao = Vector2.RIGHT
 	c._golpear()
-	assert_eq(c.arma.municao, 4, "Atirar gasta munição")
+	assert_eq(c.arma.municao, cheia - 1, "Atirar gasta munição")
 	assert_false(c.arma.pronta(), "Pistola tem recarga entre tiros")
 	await avancar_fisica(25)
 	assert_eq(mortes[0], 1, "Tiro de pistola mata com 1 acerto")
-	for _i in 4:
+	for _i in cheia - 1:
 		c.arma.set("_recarga", 0.0)
 		c._golpear()
 	await avancar_fisica(2)
@@ -212,11 +231,12 @@ func test_metralhadora_aquece_e_dispara_carga() -> void:
 	assert_true(arma.ocupada(), "Metralhadora começa aquecendo")
 	assert_eq(arvore().get_nodes_in_group("projeteis").size(), 0, "Nada sai durante o aquecimento")
 	arma._physics_process(0.5)
-	assert_eq(arma.municao, 10, "Ainda aquecendo na metade do tempo")
+	var carga: int = Armas.ARMAS["metralhadora"]["municao"]
+	assert_eq(arma.municao, carga, "Ainda aquecendo na metade do tempo")
 	arma._physics_process(0.55)
 	arma._physics_process(0.01)
-	assert_eq(arma.municao, 9, "Depois de aquecer sai o primeiro tiro")
-	for _i in 12:
+	assert_eq(arma.municao, carga - 1, "Depois de aquecer sai o primeiro tiro")
+	for _i in carga + 2:
 		arma._physics_process(0.16)
 	assert_true(c.arma == null, "Depois da carga toda a metralhadora some")
 	limpar_arena(arena)
@@ -322,7 +342,7 @@ func test_bumerangue_ida_e_volta() -> void:
 	assert_eq(mortes_volta[0], 1, "Bumerangue mata na volta")
 	assert_eq(mortes_dono[0], 0, "Bumerangue nunca acerta quem jogou")
 	assert_false(is_instance_valid(tiro), "Bumerangue some ao voltar para a mão")
-	assert_eq(c.arma.municao, 2, "Cada arremesso gasta um")
+	assert_eq(c.arma.municao, int(Armas.ARMAS["bumerangue"]["municao"]) - 1, "Cada arremesso gasta um")
 	limpar_arena(arena)
 
 

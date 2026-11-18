@@ -82,6 +82,7 @@ var _rodada: Node2D
 var _numero_rodada := 0
 var _vivos: Array = []
 var _rodada_acabou := false
+var _ultima_arma := ""  # tipo da última arma que apareceu (a próxima não repete)
 var _verificando_fim_rodada := false
 var _partida_acabou := false
 var _placar: Placar
@@ -770,7 +771,10 @@ func _criar_arma_num_ponto_livre() -> ArmaNoChao:
 	if livres.is_empty():
 		return null
 	var arma := ArmaNoChao.new()
-	arma.tipo = Armas.sortear()
+	arma.tipo = Armas.sortear(_ultima_arma)
+	_ultima_arma = arma.tipo
+	if not Armas.por_tempo(arma.tipo):
+		arma.municao = Armas.municao_sorteada(arma.tipo)
 	arma.position = livres.pick_random()
 	_rodada.add_child(arma)
 	return arma

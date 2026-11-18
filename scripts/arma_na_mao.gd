@@ -12,6 +12,8 @@ extends Node2D
 ## Quando a munição (ou o tempo) acaba, a arma some e o camaleão fica desarmado.
 
 const Armas := preload("res://scripts/armas.gd")
+## Bolinhas de munição por fileira em cima da cabeça.
+const POR_FILEIRA := 10
 const Projetil := preload("res://scripts/projetil.gd")
 const EfeitoTiro := preload("res://scripts/efeito_tiro.gd")
 
@@ -274,12 +276,19 @@ func _desenhar_carga() -> void:
 		draw_arc(Vector2(0, y), 7.0, 0.0, TAU, 20, Color(ESCURO, 0.6), 4.0, true)
 		draw_arc(Vector2(0, y), 7.0, -PI / 2.0, -PI / 2.0 + TAU * t, 20, cor.lightened(0.3), 3.0, true)
 		return
+	# Fileiras de até POR_FILEIRA bolinhas, empilhadas para cima.
 	var quantas := maxi(municao, 0)
 	var espaco := 7.0
-	var x0 := -espaco * (quantas - 1) / 2.0
-	for i in quantas:
-		draw_circle(Vector2(x0 + i * espaco, y), 3.0, ESCURO)
-		draw_circle(Vector2(x0 + i * espaco, y), 2.0, cor.lightened(0.4))
+	var i := 0
+	while i < quantas:
+		var nesta := mini(POR_FILEIRA, quantas - i)
+		var x0 := -espaco * (nesta - 1) / 2.0
+		var fileira := i / POR_FILEIRA
+		for j in nesta:
+			var p := Vector2(x0 + j * espaco, y - fileira * espaco)
+			draw_circle(p, 3.0, ESCURO)
+			draw_circle(p, 2.0, cor.lightened(0.4))
+		i += nesta
 
 
 ## Desenho simples de cada arma, apontando para "angulo" (usado na mão e no chão).
