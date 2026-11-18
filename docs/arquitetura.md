@@ -42,6 +42,12 @@ A lógica está distribuída em scripts modulares dentro do diretório `scripts/
 | `luz.gd` | `Node2D` | Projeção de áreas de sol que revelam a silhueta da sombra de jogadores camuflados. |
 | `pistas.gd` | `Node` | Sistema de rastros e pegadas molhadas ao atravessar ou sair de poças e pontes. |
 | `ondulacao.gd` | `Node2D` | Efeito visual de anéis expansivos de onda em água rasa. |
+| `armas.gd` | `RefCounted` | Configuração do arsenal (munição, recarga, alcance, raridade) e das regras de atordoar e de aparecimento de armas. |
+| `arma_na_mao.gd` | `Node2D` | Arma segurada pelo camaleão: disparo de cada tipo, aquecimento, mira laser, munição e desenho das armas. |
+| `arma_no_chao.gd` | `Area2D` | Arma largada no chão (com a munição que sobrou), coletável andando por cima ou com a língua. |
+| `projetil.gd` | `Node2D` | Tiros em voo: bala, laser que quica, foguete com explosão e bumerangue. |
+| `efeito_tiro.gd` | `Node2D` | Rastro da sniper, explosão da bazuca e choque da língua elétrica. |
+| `efeito_atordoado.gd` | `Node2D` | Passarinhos girando sobre quem está atordoado (visíveis até em invisíveis). |
 | `linguas.gd` | `RefCounted` | Tabela de propriedades de cada tipo de língua e upgrade (alcance, velocidade, tempo e cores). |
 | `lingua_no_chao.gd` | `Area2D` | Bolha de poder coletável posicionada na arena. |
 | `grude.gd` | `Node2D` | Rastro de gosma deixado no solo pela língua do poder grude que imobiliza adversários. |
@@ -75,5 +81,5 @@ O projeto utiliza dois singletons globais registrados em `project.godot`:
 2. **Configurações do Lobby (`lobby.tscn`):** Os jogadores ingressam, escolhem cores distintas e definem bots. Os dados são salvos em `Partida` e a cena transiciona para `main.tscn`.
 3. **Inicialização da Rodada (`main.gd`):** `main.gd` consulta `Partida` para instanciar os camaleões, sorteia um mapa em `mapas.gd` (garantindo alternância) e monta o cenário e colisões.
 4. **Combate:** Jogadores e bots interagem em tempo real utilizando física 2D (camada `camaleoes` colidindo com camada `paredes`).
-5. **Eliminação e Resolução:** Quando um camaleão é atingido ou cai na água, é eliminado. Golpes simultâneos no mesmo quadro são resolvidos em conjunto permitindo detecção justa de empate.
+5. **Eliminação e Resolução:** Quando um camaleão é atingido por uma arma ou cai na água, é eliminado. Golpes e línguas só atordoam. Golpes simultâneos no mesmo quadro são resolvidos em conjunto (os dois ficam atordoados), e mortes no mesmo quadro contam como empate.
 6. **Pontuação e Rodadas:** Ao restar apenas um sobrevivente (ou em caso de empate), os pontos são atribuídos em `placar.gd`. Se a meta for alcançada, a partida encerra; caso contrário, uma nova rodada é iniciada no próximo mapa.
