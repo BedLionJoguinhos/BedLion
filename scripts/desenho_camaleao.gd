@@ -5,6 +5,8 @@ extends RefCounted
 ## Inspirado no desenho em arte/referencia_camaleao.jpg.
 ## Tudo é desenhado virado para a direita e espelhado quando ele olha para a esquerda.
 
+const Linguas := preload("res://scripts/linguas.gd")
+
 const CONTORNO := Color(0.08, 0.07, 0.1)
 const LARGURA := 2.0
 ## Tamanho do desenho dentro do jogo (1.0 = umas 50 px de altura).
@@ -135,3 +137,40 @@ static func _elipse(centro: Vector2, raio: Vector2, lados := 20) -> PackedVector
 		var angulo := TAU * i / lados
 		pontos.append(centro + Vector2(cos(angulo) * raio.x, sin(angulo) * raio.y))
 	return pontos
+
+
+## Setinha de mira: um tracejado curto e uma ponta de seta na direção da mira.
+static func desenhar_mira(item: CanvasItem, direcao: Vector2) -> void:
+	var lado := direcao.orthogonal()
+	for i in 3:
+		var p := direcao * (30.0 + i * 9.0)
+		item.draw_circle(p, 3.2, Color(0, 0, 0, 0.35))
+		item.draw_circle(p, 2.2, Color(1, 1, 1, 0.8))
+	var ponta := direcao * 66.0
+	var base := direcao * 54.0
+	var seta := PackedVector2Array([ponta, base + lado * 7.0, base - lado * 7.0])
+	item.draw_colored_polygon(seta, Color(1, 1, 1, 0.9))
+	seta.append(ponta)
+	item.draw_polyline(seta, Color(0, 0, 0, 0.5), 2.0, true)
+
+
+## Poder "olho": um círculo tracejado mostra até onde ele enxerga, e quem estiver
+## invisível dentro dele aparece como um vulto tremido (para todo mundo ver,
+## inclusive quem está invisível: ele sabe que foi visto).
+static func desenhar_olho(item: Node2D, tempo: float) -> void:
+	var raio: float = Linguas.TIPOS["olho"]["raio_olho"]
+	var cor_olho: Color = Linguas.TIPOS["olho"]["cor"]
+	var tracos := 24
+	for i in tracos:
+		var comeco := TAU * i / tracos + tempo * 0.3
+		item.draw_arc(Vector2.ZERO, raio, comeco, comeco + TAU / tracos * 0.5, 4, Color(cor_olho, 0.35), 2.0, true)
+	for outro in item.get_tree().get_nodes_in_group("camaleoes"):
+		if outro == item or not outro.vivo or not outro.invisivel or not item._enxerga(outro):
+			continue
+		var onde := item.to_local(outro.position)
+		# Vulto: dois contornos que tremem, como ar quente.
+		for k in 2:
+			var tremida := Vector2(sin(tempo * 23.0 + k * 2.0), cos(tempo * 19.0 + k)) * 2.5
+			item.draw_set_transform(onde + tremida, 0.0, Vector2(1.0, 1.25))
+			item.draw_arc(Vector2.ZERO, 18.0 + 2.0 + k * 3.0, 0.0, TAU, 20, Color(cor_olho, 0.55 - k * 0.2), 2.0, true)
+		item.draw_set_transform(Vector2.ZERO)

@@ -2,7 +2,7 @@
 
 Jogo 2D multijogador local de arena (tela compartilhada) para até 4 jogadores.
 
-Cada jogador controla um camaleão com duas ações principais: lançar a língua para puxar os adversários e desferir um golpe de curta distância para eliminá-los. Também é possível utilizar camuflagem para ficar temporariamente invisível. O último jogador que restar na arena pontua na rodada.
+Cada jogador controla um camaleão com duas ações principais: lançar a língua para puxar os adversários (e itens) e desferir um golpe de curta distância que atordoa e derruba a arma do outro. Só as armas que aparecem no mapa matam. Também é possível utilizar camuflagem para ficar temporariamente invisível. O último jogador que restar na arena pontua na rodada.
 
 ## Tecnologias
 
@@ -30,7 +30,7 @@ godot --headless --path . -s tests/test_runner.gd
 
 O jogo suporta até 4 participantes simultâneos via teclado e controles externos:
 
-| Dispositivo | Mover | Golpe | Invisibilidade | Língua |
+| Dispositivo | Mover | Golpe / tiro | Invisibilidade | Língua |
 | :--- | :--- | :--- | :--- | :--- |
 | **Teclado 1** | `W`, `A`, `S`, `D` | `F` | `G` | `H` |
 | **Teclado 2** | Setas direcionais | `.` (ou Numpad 1) | `,` (ou Numpad 2) | `;` / `/` (ou Numpad 3) |

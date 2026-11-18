@@ -23,6 +23,7 @@ func _ready() -> void:
 	forma.shape = circulo
 	add_child(forma)
 	add_to_group("upgrades_no_chao")
+	add_to_group("itens_no_chao")  # a língua puxa bolhas e armas
 	z_index = -1  # fica por baixo dos camaleões
 
 
@@ -51,6 +52,7 @@ func afundar() -> void:
 	if _afundando < 0.0:
 		_afundando = 0.0
 		remove_from_group("upgrades_no_chao")
+		remove_from_group("itens_no_chao")
 
 
 func _draw() -> void:

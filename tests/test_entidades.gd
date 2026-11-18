@@ -11,6 +11,7 @@ const Placar := preload("res://scripts/placar.gd")
 const Ui := preload("res://scripts/ui.gd")
 const MainScript := preload("res://scripts/main.gd")
 const Linguas := preload("res://scripts/linguas.gd")
+const ArmaNoChao := preload("res://scripts/arma_no_chao.gd")
 
 
 func get_suite_name() -> String:
@@ -287,14 +288,22 @@ func test_bot_poderes_pistas_e_esquiva() -> void:
 	assert_true(cerebro._desviar_de_lingua(), "Bot._desviar_de_lingua() ativa esquiva quando língua vem na direção dele")
 	alvo.set("_estado_lingua", "")
 
-	# Bot golpeia durante puxada quando alvo chega ao alcance
+	# Desarmado e puxando: espera a puxada acabar (aí o alvo fica atordoado)
 	bot_cam.lingua = "basica"
 	bot_cam.set("_estado_lingua", "puxando")
 	bot_cam.set("_preso", alvo)
 	bot_cam.set("_recarga_golpe", 0.0)
 	alvo.position = bot_cam.position + Vector2(35, 0)
+	assert_false(cerebro.agir(0.2)["golpe"], "Bot desarmado não interrompe a puxada com golpe")
+
+	# Armado e puxando: atira assim que o alvo chega ao alcance
+	var no_chao := ArmaNoChao.new()
+	no_chao.tipo = "pistola"
+	arena.add_child(no_chao)
+	assert_true(bot_cam.pegar_arma(no_chao), "Bot pega arma")
 	var acoes_puxando := cerebro.agir(0.2)
-	assert_true(acoes_puxando["golpe"], "Bot golpeia alvo puxado assim que entra no alcance")
+	assert_true(acoes_puxando["golpe"], "Bot armado atira no alvo puxado assim que entra no alcance")
+	no_chao.free()
 
 	limpar_arena(arena)
 

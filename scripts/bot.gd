@@ -26,11 +26,17 @@ extends RefCounted
 ## - cuidado: invisível, evita passar pelo sol, pelo capim e pelas poças.
 ## - esquiva: chance de sair da frente de uma língua vindo na direção dele.
 ## - memoria: por quantos segundos ele lembra onde viu um invisível.
+##
+## Armas (armas.gd): desarmado, ele vai atrás da arma mais perto (andando ou
+## puxando com a língua) e usa a língua e o golpe para atordoar e derrubar a
+## arma dos outros. Armado, fica a uma distância boa para a arma e atira (o
+## botão do golpe), sem sumir (sumir largaria a arma).
 
 const Mapas := preload("res://scripts/mapas.gd")
 const Linguas := preload("res://scripts/linguas.gd")
 const Desenho := preload("res://scripts/desenho_camaleao.gd")
 const Caminhos := preload("res://scripts/caminhos.gd")
+const Armas := preload("res://scripts/armas.gd")
 
 const NIVEIS := {
 	"facil":
@@ -160,11 +166,13 @@ func agir(delta: float) -> Dictionary:
 		return acoes
 	_tentou_se_soltar = false
 
-	# Língua fora: fica parado esperando (apertar de novo soltaria). Puxando
-	# alguém, golpeia assim que ele chega ao alcance (o golpe recolhe a língua).
+	# Língua fora: fica parado esperando (apertar de novo soltaria). Armado e
+	# puxando alguém, atira assim que ele chega ao alcance (o golpe recolhe a
+	# língua). Desarmado, espera a puxada acabar (aí o outro fica atordoado).
 	if eu._estado_lingua != "":
 		if (
 			eu._estado_lingua == "puxando"
+			and eu.arma != null
 			and is_instance_valid(eu._preso)
 			and eu.position.distance_to(eu._preso.position) <= eu.ALCANCE_GOLPE * 0.9
 			and eu._recarga_golpe <= 0.0
@@ -175,9 +183,24 @@ func agir(delta: float) -> Dictionary:
 				acoes["golpe"] = true
 		return acoes
 
+	# Armado: mira em quem estiver ao alcance da arma e atira depois de um
+	# tempinho de reação (o botão do golpe vira tiro).
+	if eu.arma != null:
+		var alvo_tiro := _alvo_do_tiro()
+		if alvo_tiro == Vector2.INF:
+			_tempo_perto = 0.0
+		else:
+			_tempo_perto += delta
+			acoes["mover"] = eu.position.direction_to(alvo_tiro) * TOQUE_MIRAR
+			if eu.arma.pronta() and _tempo_perto >= reacao * 0.6:
+				_tempo_perto = 0.0
+				acoes["golpe"] = true
+				_memoria.erase(_chave_golpe)
+			if acoes["golpe"] or eu.arma.ocupada():
+				return acoes
 	# Alguém ao alcance do golpe (visto, ou um invisível que ele acabou de notar):
 	# golpeia depois de um tempinho de reação.
-	var alvo_golpe := _alvo_do_golpe()
+	var alvo_golpe := Vector2.INF if eu.arma != null else _alvo_do_golpe()
 	if alvo_golpe != Vector2.INF:
 		_tempo_perto += delta
 		if _tempo_perto >= reacao * 0.6 and eu._recarga_golpe <= 0.0:
@@ -187,7 +210,7 @@ func agir(delta: float) -> Dictionary:
 			if _chave_golpe != null:
 				_memoria.erase(_chave_golpe)  # golpeou onde achava que ele estava: acertou ou errou
 			return acoes
-	else:
+	elif eu.arma == null:
 		_tempo_perto = 0.0
 
 	# Poder "muda": um toque no invisível troca de pele e some na hora.
@@ -271,6 +294,10 @@ func _pensar() -> void:
 		_pensar_invisivel(alvo, suspeita)
 		return
 
+	# Desarmado: pegar uma arma vem antes de tudo (só as armas matam).
+	if eu.arma == null and _buscar_arma(agressividade):
+		return
+
 	if alvo:
 		# Alvo longe: às vezes aproveita para buscar uma bolha ou sumir antes.
 		var longe := eu.position.distance_to(alvo.position) > 450.0
@@ -315,6 +342,9 @@ func _pensar_com_alvo(onde: Vector2, velocidade: Vector2, preso: bool, agressivi
 	var alcance: float = Linguas.TIPOS[eu.lingua]["alcance"]
 	var parede: bool = eu._bate_em_parede(eu.position, onde)
 	var caminho_livre := not parede
+	if eu.arma != null:
+		_posicionar_para_atirar(onde, distancia, parede)
+		return
 	if distancia <= eu.ALCANCE_GOLPE * 0.9 and not parede:
 		_destino = Vector2.INF  # o golpe é tratado a cada frame em agir()
 		return
@@ -345,6 +375,62 @@ func _pensar_com_alvo(onde: Vector2, velocidade: Vector2, preso: bool, agressivi
 		# Longe o bastante: anda de lado, esperando uma chance.
 		var lado := eu.position.direction_to(onde).orthogonal() * _lado
 		_destino = _limitar_arena(eu.position + lado * 120.0)
+
+
+## Armado: chega até o alcance da arma (ou até ver o alvo sem parede no meio),
+## não fica perto demais da explosão da bazuca e, no alcance, anda de lado.
+func _posicionar_para_atirar(onde: Vector2, distancia: float, parede: bool) -> void:
+	var dados: Dictionary = Armas.ARMAS[eu.arma.tipo]
+	var alcance := minf(float(dados["alcance"]) * 0.8, 700.0)
+	var perto_demais := float(dados.get("raio_explosao", 0.0)) + 60.0
+	if parede or distancia > alcance:
+		_destino = onde
+	elif distancia < perto_demais:
+		_destino = _ponto_longe_de(onde)
+	else:
+		var lado := eu.position.direction_to(onde).orthogonal() * _lado
+		_destino = _limitar_arena(eu.position + lado * 100.0)
+
+
+## Desarmado: vai até a arma mais perto (ou puxa com a língua). A vontade cresce
+## com a agressividade. Devolve true se decidiu ir.
+func _buscar_arma(agressividade: float) -> bool:
+	var arma := _mais_perto(_itens_livres("armas_no_chao"))
+	if arma == null or randf() > 0.5 + agressividade:
+		return false
+	var distancia := eu.position.distance_to(arma.position)
+	var alcance: float = Linguas.TIPOS[eu.lingua]["alcance"]
+	if distancia < alcance * 0.9 and distancia > 80.0 and _pode_lancar_lingua() and not eu._bate_em_parede(eu.position, arma.position):
+		_planejar_lingua(eu.position.direction_to(arma.position))
+	else:
+		_destino = arma.position
+	return true
+
+
+## Onde atirar agora: alguém visível (ou um invisível de que ele lembra) ao
+## alcance da arma, sem parede no meio e longe o bastante da própria explosão.
+## Já adianta para onde o alvo está andando. Vector2.INF = ninguém.
+func _alvo_do_tiro() -> Vector2:
+	var dados: Dictionary = Armas.ARMAS[eu.arma.tipo]
+	var alcance := float(dados["alcance"]) * 0.9
+	var minimo := float(dados.get("raio_explosao", -40.0)) + 40.0
+	_chave_golpe = null
+	var candidatos: Array = []
+	var alvo := _alvo_visivel()
+	if alvo:
+		candidatos.append([alvo.position, _velocidade_de(alvo), null])
+	for outro in _memoria:
+		var lembranca: Dictionary = _memoria[outro]
+		candidatos.append([lembranca["pos"], Vector2.ZERO, outro])
+	for candidato in candidatos:
+		var pos: Vector2 = candidato[0]
+		var distancia := eu.position.distance_to(pos)
+		if distancia > alcance or distancia < minimo or eu._bate_em_parede(eu.position, pos):
+			continue
+		_chave_golpe = candidato[2]
+		var rapidez := float(dados.get("velocidade", 4000.0))
+		return pos + (candidato[1] as Vector2) * (distancia / rapidez) * float(nivel["prever"])
+	return Vector2.INF
 
 
 ## Invisível: caça no corpo a corpo (não dá para usar a língua).
@@ -408,6 +494,8 @@ func _talvez_sumir(poderes: float) -> bool:
 	if _quer_sumir or eu.invisivel:
 		return false
 	var lingua: String = eu.lingua
+	if eu.arma != null and not Armas.ARMAS[eu.arma.tipo].get("fica_invisivel", false):
+		return false  # sumir largaria a arma
 	var pode_sumir := lingua == Linguas.BASICA or lingua == "muda" or randf() > poderes
 	var chance := float(nivel["invisibilidade"]) * 0.4 * _intervalo  # por segundo
 	if pode_sumir and randf() < chance and not _deixaria_pista(eu.position):
@@ -589,11 +677,16 @@ func _velocidade_de(alvo: Node2D) -> Vector2:
 
 
 func _bolha_mais_perto() -> Node2D:
+	return _mais_perto(_itens_livres("upgrades_no_chao"))
+
+
+## Itens do grupo que estão no chão (não na língua de alguém nem na água).
+func _itens_livres(grupo: String) -> Array:
 	var lista: Array = []
-	for item in eu.get_tree().get_nodes_in_group("upgrades_no_chao"):
+	for item in eu.get_tree().get_nodes_in_group(grupo):
 		if not item.na_lingua and not Mapas.na_agua(eu.mapa, item.position):
 			lista.append(item)
-	return _mais_perto(lista)
+	return lista
 
 
 func _mais_perto(nos: Array) -> Node2D:

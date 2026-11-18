@@ -5,6 +5,8 @@ extends Node2D
 ## entram os teclados e controles conectados, e F1 liga bots de teste. Ganha a partida quem fizer PONTOS_PARA_VENCER.
 ## A cada rodada o mapa muda: os mapas de mapas.gd são embaralhados e saem um
 ## por vez, então todos aparecem antes de algum repetir. F2 pula para o próximo mapa.
+## Armas (armas.gd): a rodada começa com poucas no mapa (Armas.armas_no_inicio) e
+## aparece mais uma a cada Armas.INTERVALO_ARMA segundos, sorteada pelo peso.
 
 const Camaleao := preload("res://scripts/camaleao.gd")
 const LinguaNoChao := preload("res://scripts/lingua_no_chao.gd")
@@ -19,6 +21,8 @@ const Luz := preload("res://scripts/luz.gd")
 const Pistas := preload("res://scripts/pistas.gd")
 const Ui := preload("res://scripts/ui.gd")
 const Desenho := preload("res://scripts/desenho_camaleao.gd")
+const Armas := preload("res://scripts/armas.gd")
+const ArmaNoChao := preload("res://scripts/arma_no_chao.gd")
 
 ## Tamanho da arena (em pixels do jogo). A janela continua do mesmo tamanho:
 ## o jogo é esticado para caber nela (veja _ready). Era 1280 x 720.
@@ -519,7 +523,7 @@ func _montar_guia_comandos(pos: Vector2, largura: float, altura: float) -> Contr
 			[
 				"Mover: Analógico Esq.   |   Pausa: %s" % Controles.nome_botao("pad0", "pausa"),
 				(
-					"Golpe: %s   |   Invisível: %s   |   Língua: %s"
+					"Golpe/tiro: %s   |   Invisível: %s   |   Língua: %s"
 					% [
 						Controles.nome_botao("pad0", "golpe"),
 						Controles.nome_botao("pad0", "invisivel"),
@@ -534,7 +538,7 @@ func _montar_guia_comandos(pos: Vector2, largura: float, altura: float) -> Contr
 			[
 				"Mover: %s / %s" % [Controles.nome_botao("teclado1", "cima_baixo"), Controles.nome_botao("teclado1", "lados")],
 				(
-					"Golpe: %s   |   Invisível: %s   |   Língua: %s"
+					"Golpe/tiro: %s   |   Invisível: %s   |   Língua: %s"
 					% [
 						Controles.nome_botao("teclado1", "golpe"),
 						Controles.nome_botao("teclado1", "invisivel"),
@@ -549,7 +553,7 @@ func _montar_guia_comandos(pos: Vector2, largura: float, altura: float) -> Contr
 			[
 				"Mover: Setas",
 				(
-					"Golpe: %s   |   Invisível: %s   |   Língua: %s"
+					"Golpe/tiro: %s   |   Invisível: %s   |   Língua: %s"
 					% [
 						Controles.nome_botao("teclado2", "golpe"),
 						Controles.nome_botao("teclado2", "invisivel"),
@@ -637,7 +641,7 @@ func _escrever_ajuda() -> void:
 		partes.append("F1: %s" % NOMES_MODO_BOT[_modo_bot])
 		partes.append("F2: próximo mapa")
 	partes.append("Esc / Start: pausa" if usa_pad else "Esc: pausa")
-	_rotulo_ajuda.text = "(golpe / invisível / língua)    " + "    |    ".join(partes)
+	_rotulo_ajuda.text = "(golpe ou tiro / invisível / língua)    " + "    |    ".join(partes)
 
 
 func _nova_partida() -> void:
@@ -680,6 +684,12 @@ func _nova_rodada() -> void:
 		relogio.timeout.connect(_spawnar_upgrade)
 		_rodada.add_child(relogio)
 
+	var relogio_arma := Timer.new()
+	relogio_arma.wait_time = Armas.INTERVALO_ARMA
+	relogio_arma.autostart = true
+	relogio_arma.timeout.connect(_spawnar_arma)
+	_rodada.add_child(relogio_arma)
+
 	var relogio_coco := Timer.new()
 	relogio_coco.wait_time = INTERVALO_COCO
 	relogio_coco.autostart = true
@@ -704,6 +714,9 @@ func _nova_rodada() -> void:
 		_rodada.add_child(camaleao)
 		_vivos.append(camaleao)
 
+	for _i in Armas.armas_no_inicio(_jogadores.size()):
+		_criar_arma_num_ponto_livre()
+
 
 func _tem_teclado2() -> bool:
 	for dados in _jogadores:
@@ -715,23 +728,52 @@ func _tem_teclado2() -> bool:
 func _spawnar_upgrade() -> void:
 	if _rodada_acabou:
 		return
-	var no_chao: Array = []
+	var no_chao := 0
 	for filho in _rodada.get_children():
 		if filho is LinguaNoChao:
-			no_chao.append(filho)
-	if no_chao.size() >= MAX_UPGRADES:
+			no_chao += 1
+	if no_chao >= MAX_UPGRADES:
 		return
-	var livres: Array = []
-	for ponto in _mapa["pontos_upgrade"]:
-		var ocupado := false
-		for existente in no_chao:
-			if existente.position.distance_to(ponto) < 40.0:
-				ocupado = true
-		if not ocupado:
-			livres.append(ponto)
+	var livres := _pontos_livres()
 	if livres.is_empty():
 		return
 	_criar_upgrade(livres.pick_random())
+
+
+## Pontos de aparecer ("pontos_upgrade" do mapa) sem bolha nem arma em cima.
+func _pontos_livres() -> Array:
+	var livres: Array = []
+	for ponto in _mapa["pontos_upgrade"]:
+		var ocupado := false
+		for filho in _rodada.get_children():
+			if (filho is LinguaNoChao or filho is ArmaNoChao) and filho.position.distance_to(ponto) < 40.0:
+				ocupado = true
+		if not ocupado:
+			livres.append(ponto)
+	return livres
+
+
+## De tempos em tempos aparece mais uma arma, se tiver poucas largadas no chão.
+func _spawnar_arma() -> void:
+	if _rodada_acabou:
+		return
+	var no_chao := 0
+	for filho in _rodada.get_children():
+		if filho is ArmaNoChao:
+			no_chao += 1
+	if no_chao < Armas.MAX_ARMAS_NO_CHAO:
+		_criar_arma_num_ponto_livre()
+
+
+func _criar_arma_num_ponto_livre() -> ArmaNoChao:
+	var livres := _pontos_livres()
+	if livres.is_empty():
+		return null
+	var arma := ArmaNoChao.new()
+	arma.tipo = Armas.sortear()
+	arma.position = livres.pick_random()
+	_rodada.add_child(arma)
+	return arma
 
 
 ## Sorteia um lugar livre no chão (longe das paredes, dos blocos e da água) e solta um cocô lá.

@@ -119,7 +119,8 @@ func test_golpe_alcance_parede_e_empate() -> void:
 	assert_false(p1.invisivel, "Golpear enquanto invisível revela o atacante")
 	p2._golpear()
 	await avancar_fisica(2)
-	assert_true(mortes[0] == 1 and mortes[1] == 1, "Golpes simultâneos no mesmo quadro matam ambos (empate justo)")
+	assert_true(mortes[0] == 0 and mortes[1] == 0, "Golpe não mata ninguém (só atordoa)")
+	assert_true(p1.atordoado() and p2.atordoado(), "Golpes simultâneos no mesmo quadro atordoam os dois (justo)")
 
 	limpar_arena(arena2)
 
@@ -365,7 +366,8 @@ func test_recolher_lingua_e_mira() -> void:
 	assert_true(c.get("_mirando"), "Analógico direito ativa indicador _mirando")
 	assert_approx(c.direcao.angle(), Vector2.RIGHT.angle(), 0.01, "RT recolhe língua e direciona golpe pelo analógico direito")
 	await avancar_fisica(2)
-	assert_eq(alvo_morreu[0], 1, "Golpe direcionado pelo analógico direito acerta alvo na mira")
+	assert_eq(alvo_morreu[0], 0, "Golpe não mata")
+	assert_true(alvo.atordoado(), "Golpe direcionado pelo analógico direito acerta (atordoa) alvo na mira")
 
 	# Soltar-se de puxada golpeando (RT) com analógico direito mira o contra-ataque
 	await arvore().process_frame

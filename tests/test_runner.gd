@@ -35,6 +35,7 @@ func _initialize() -> void:
 		load("res://tests/test_partida.gd").new(),
 		load("res://tests/test_caminhos.gd").new(),
 		load("res://tests/test_camaleao.gd").new(),
+		load("res://tests/test_armas.gd").new(),
 		load("res://tests/test_entidades.gd").new(),
 		load("res://tests/test_telas.gd").new(),
 		load("res://tests/test_visual_e_pistas.gd").new(),

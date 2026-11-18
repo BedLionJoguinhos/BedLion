@@ -5,19 +5,23 @@ extends CharacterBody2D
 ## - Língua (só visível): sai reta da boca, vai até o alcance e volta. Se pegar
 ##   outro camaleão, puxa ele até a boca. Se pegar um upgrade de língua no chão
 ##   (inclusive o que um invisível largou), traz ele até a boca e já pega. A língua sozinha não mata: é para trazer
-##   o outro para perto e dar o golpe. Enquanto ela está fora, quem lançou fica
+##   o outro para perto. Se a puxada chega até a boca, quem veio fica atordoado
+##   (armas.gd). Enquanto ela está fora, quem lançou fica
 ##   parado. Apertar de novo solta, e a língua fica RECARGA_SOLTAR segundos sem
 ##   poder ser usada. Quem foi pego pode se soltar com a língua ou com o golpe,
 ##   mas só depois de TEMPO_ATE_SE_SOLTAR.
-## - Golpe: curto, na frente dele; mata. Funciona visível e invisível, mas
+## - Golpe: curto, na frente dele; não mata: atordoa, empurra um pouco e
+##   derruba a arma de quem levou (armas.gd). Funciona visível e invisível, mas
 ##   golpear faz ele aparecer de novo, então não dá para ficar batendo escondido.
+##   Com uma arma na mão (arma_na_mao.gd), o mesmo botão atira: só as armas matam.
 ##   Com a língua fora, o golpe recolhe a língua e bate na hora (quem puxou não
 ##   precisa soltar a língua antes de bater).
 ## Mira: no controle, o analógico direito aponta a língua e o golpe (o camaleão
 ## vira para lá e aparece uma setinha). Solto, vale a direção em que ele olha.
 ## No teclado 1, as setas miram quando o teclado 2 não está jogando.
 ## Invisível: segura o botão por TEMPO_PARA_SUMIR segundos para sumir para todos
-## (inclusive para o próprio jogador). Se tiver um upgrade de língua, ele cai no chão.
+## (inclusive para o próprio jogador). Se tiver um upgrade de língua ou uma arma,
+## cai no chão (menos a língua elétrica, que é de perto).
 ## Pés sujos: quem pisa em cocô de pombo (coco_pombo.gd) ou sai de uma poça
 ## (pistas.gd) deixa pegadas por um tempo, mesmo invisível.
 ## Água: quem entra num lago ou rio do mapa (mapas.gd) afunda e morre, inclusive
@@ -40,6 +44,10 @@ const Grude := preload("res://scripts/grude.gd")
 const Casca := preload("res://scripts/casca.gd")
 const EfeitoTexto := preload("res://scripts/efeito_texto.gd")
 const Bot := preload("res://scripts/bot.gd")
+const Armas := preload("res://scripts/armas.gd")
+const ArmaNoChao := preload("res://scripts/arma_no_chao.gd")
+const ArmaNaMao := preload("res://scripts/arma_na_mao.gd")
+const EfeitoAtordoado := preload("res://scripts/efeito_atordoado.gd")
 
 ## Velocidade de andar (px/s), igual para jogadores e bots. Era 300; baixou ~13%.
 const VELOCIDADE := 260.0
@@ -101,6 +109,7 @@ var lingua := Linguas.BASICA  # tipo em linguas.gd
 var invisivel := false
 var vivo := true
 var puxado_por: Node = null  # quem está puxando este camaleão com a língua
+var arma: ArmaNaMao = null  # arma na mão (null = desarmado: o golpe só atordoa)
 
 var _recarga_golpe := 0.0
 var _recarga_lingua := 0.0
@@ -118,6 +127,9 @@ var _embalo := Vector2.ZERO  # velocidade que sobrou de um voo de gancho solto n
 var _entrada_gancho := Vector2.ZERO  # direção apertada enquanto voa com o gancho
 var _tempo_olho := 0.0  # animação do vulto que o poder "olho" mostra
 var _mirando := false  # analógico direito (ou setas) apontando: mostra a setinha de mira
+var _tempo_atordoado := 0.0  # segundos que ainda fica tonto (sem fazer nada)
+var _imune_atordoar := 0.0  # segundos que ainda não pode ser atordoado de novo
+var _empurrao := Vector2.ZERO  # empurrão do golpe que levou (vai freando)
 
 # Língua lançada por este camaleão.
 var _estado_lingua := ""  # "" = na boca; "indo", "voltando", "puxando", "trazendo" ou "gancho"
@@ -193,6 +205,20 @@ func _physics_process(delta: float) -> void:
 		segurando_invisivel = Input.is_action_pressed(controle + "_invisivel")
 		mira = _ler_mira()
 
+	if _tempo_atordoado > 0.0:
+		# Atordoado: não anda, não ataca, não usa a língua nem some.
+		_tempo_atordoado -= delta
+		if _tempo_atordoado <= 0.0:
+			_imune_atordoar = Armas.IMUNE_ATORDOAR
+		entrada = Vector2.ZERO
+		mira = Vector2.ZERO
+		quer_golpear = false
+		quer_lingua = false
+		apertou_invisivel = false
+		segurando_invisivel = false
+	else:
+		_imune_atordoar -= delta
+
 	if _sendo_puxado():
 		_mirando = false
 		_ser_arrastado(delta, quer_golpear or quer_lingua, quer_golpear, mira)
@@ -233,8 +259,9 @@ func _physics_process(delta: float) -> void:
 	_mirando = mira != Vector2.ZERO and _estado_lingua == ""
 	if absf(direcao.x) > 0.1:
 		_olhando_direita = direcao.x > 0.0
-	velocity = entrada * VELOCIDADE + _embalo
+	velocity = entrada * VELOCIDADE + _embalo + _empurrao
 	_embalo = _embalo.move_toward(Vector2.ZERO, FREIO_EMBALO * delta)
+	_empurrao = _empurrao.move_toward(Vector2.ZERO, Armas.FREIO_EMPURRAO * delta)
 	if _estado_lingua == "gancho":
 		var para_parede := position.direction_to(_ponta)
 		var para_o_lado := _entrada_gancho - para_parede * _entrada_gancho.dot(para_parede)
@@ -312,6 +339,8 @@ func _sumir() -> void:
 	if lingua != Linguas.BASICA:
 		_largar_upgrade()
 		lingua = Linguas.BASICA
+	if arma and not Armas.ARMAS[arma.tipo].get("fica_invisivel", false):
+		_largar_arma(Vector2.ZERO)
 
 
 ## Poder "muda": some na hora e deixa a pele velha parada no lugar.
@@ -421,8 +450,13 @@ func _mover_lingua(delta: float) -> void:
 				return
 			_ponta = _preso.position
 			_tempo_puxando += delta
-			# Chegou perto (ou ficou preso numa quina por tempo demais): acabou a puxada.
-			if position.distance_to(_preso.position) <= DISTANCIA_FIM_PUXADA or _tempo_puxando >= _dados_lingua["tempo_puxada"] + 0.4:
+			# Chegou perto: quem veio fica atordoado. Preso numa quina por tempo
+			# demais: só acaba a puxada.
+			if position.distance_to(_preso.position) <= DISTANCIA_FIM_PUXADA:
+				var preso := _preso
+				soltar_lingua(RECARGA_LINGUA)
+				preso.atordoar(Armas.TEMPO_ATORDOADO, Vector2.ZERO, false)
+			elif _tempo_puxando >= _dados_lingua["tempo_puxada"] + 0.4:
 				soltar_lingua(RECARGA_LINGUA)
 			elif LINGUA_PODE_SER_CORTADA and _alguem_cortou(_preso.position):
 				soltar_lingua(RECARGA_SOLTAR)
@@ -480,13 +514,13 @@ func _camaleao_no_caminho(de: Vector2, ate: Vector2) -> Node:
 	return melhor
 
 
-## Primeiro upgrade de língua no chão que a ponta encosta indo de "de" até "ate"
-## (o mesmo vale para os que invisíveis largaram). Não pega através de parede
-## nem um que já esteja na língua de outro.
+## Primeira bolha de poder ou arma no chão que a ponta encosta indo de "de" até
+## "ate" (o mesmo vale para o que invisíveis largaram). Não pega através de
+## parede nem um que já esteja na língua de outro.
 func _item_no_caminho(de: Vector2, ate: Vector2) -> Node:
 	var melhor: Node = null
 	var melhor_distancia := INF
-	for item in get_tree().get_nodes_in_group("upgrades_no_chao"):
+	for item in get_tree().get_nodes_in_group("itens_no_chao"):
 		if item.na_lingua or item.is_queued_for_deletion():
 			continue
 		var perto := Geometry2D.get_closest_point_to_segment(item.position, de, ate)
@@ -505,12 +539,15 @@ func _comecar_a_trazer(item: Node) -> void:
 	item.position = _ponta
 
 
-## O upgrade chegou na boca: pega na hora se estiver com a língua básica;
-## se já tiver um poder, o que veio cai no chão aos pés dele.
+## O item chegou na boca: pega na hora se puder (poder: com a língua básica;
+## arma: desarmado). Se não puder, o que veio cai no chão aos pés dele.
 func _receber_item() -> void:
 	var item := _item
 	soltar_lingua(RECARGA_LINGUA)  # solta o item onde está a ponta (na boca)
-	if is_instance_valid(item) and pegar_upgrade(item):
+	var pegou := false
+	if is_instance_valid(item):
+		pegou = pegar_arma(item) if item is ArmaNoChao else pegar_upgrade(item)
+	if pegou:
 		item.queue_free()
 	elif is_instance_valid(item):
 		item.position = position
@@ -653,7 +690,12 @@ func _desenhar_lingua() -> void:
 
 
 func _golpear() -> void:
-	if not vivo or _recarga_golpe > 0.0:
+	if not vivo:
+		return
+	if arma:
+		arma.apertar()  # armado, o golpe vira tiro
+		return
+	if _recarga_golpe > 0.0:
 		return
 	_recarga_golpe = RECARGA_GOLPE
 	# Bater tira da invisibilidade e interrompe qualquer carga em andamento.
@@ -686,7 +728,7 @@ static func resolver_golpes_pendentes() -> void:
 		return
 	var atacantes := _golpes_pendentes.duplicate()
 	_golpes_pendentes.clear()
-	var mortos: Array = []
+	var atingidos: Dictionary = {}  # quem levou -> de onde veio o golpe
 	var cascas_estouradas: Array = []
 	for item in atacantes:
 		if not is_instance_valid(item):
@@ -699,8 +741,8 @@ static func resolver_golpes_pendentes() -> void:
 			if outro == atacante or not outro.vivo:
 				continue
 			if atacante._alcanca_golpe(outro.position):
-				if not mortos.has(outro):
-					mortos.append(outro)
+				if not atingidos.has(outro):
+					atingidos[outro] = atacante.position
 				acertou = true
 		for casca in atacante.get_tree().get_nodes_in_group("cascas"):
 			if casca.is_queued_for_deletion():
@@ -723,9 +765,11 @@ static func resolver_golpes_pendentes() -> void:
 	for casca in cascas_estouradas:
 		if is_instance_valid(casca):
 			casca.estourar()
-	for morto in mortos:
-		if is_instance_valid(morto) and morto.vivo:
-			morto.morrer()
+	# O golpe não mata: atordoa, empurra para longe de quem bateu e derruba a arma.
+	for alvo in atingidos:
+		if is_instance_valid(alvo) and alvo.vivo:
+			var para_longe: Vector2 = (atingidos[alvo] as Vector2).direction_to(alvo.position)
+			alvo.atordoar(Armas.TEMPO_ATORDOADO, para_longe * Armas.EMPURRAO_GOLPE, true)
 
 
 # --- Pés sujos (cocô de pombo) ----------------------------------------------
@@ -793,11 +837,7 @@ func pegar_upgrade(no_chao: Node) -> bool:
 	if not vivo or invisivel or lingua != Linguas.BASICA:
 		return false
 	lingua = no_chao.tipo
-	var nome := EfeitoTexto.new()
-	nome.texto = Linguas.TIPOS[lingua].get("nome", lingua)
-	nome.cor = Linguas.TIPOS[lingua]["cor"]
-	nome.position = position
-	mundo.add_child.call_deferred(nome)
+	_mostrar_texto(Linguas.TIPOS[lingua].get("nome", lingua), Linguas.TIPOS[lingua]["cor"])
 	return true
 
 
@@ -806,6 +846,84 @@ func _largar_upgrade() -> void:
 	no_chao.tipo = lingua
 	no_chao.position = position
 	mundo.add_child(no_chao)
+
+
+# --- Armas e atordoar (números em armas.gd) ----------------------------------
+
+
+## Chamado pela arma no chão (ou quando a língua traz uma). Só pega visível, acordado e desarmado.
+func pegar_arma(no_chao: Node) -> bool:
+	if not vivo or invisivel or arma != null or atordoado():
+		return false
+	arma = ArmaNaMao.new()
+	arma.tipo = no_chao.tipo
+	arma.municao = no_chao.municao
+	arma.tempo_restante = no_chao.tempo_restante
+	arma.dono = self
+	add_child(arma)
+	_mostrar_texto(Armas.ARMAS[arma.tipo]["nome"], Armas.ARMAS[arma.tipo]["cor"])
+	return true
+
+
+## Larga a arma no chão com a munição que sobrou, um pouco para o lado "para" (ZERO = nos pés).
+func _largar_arma(para: Vector2) -> void:
+	if arma == null:
+		return
+	var no_chao := ArmaNoChao.new()
+	no_chao.tipo = arma.tipo
+	no_chao.municao = arma.municao
+	no_chao.tempo_restante = arma.tempo_restante
+	var onde := position + para.normalized() * Armas.DISTANCIA_QUEDA
+	no_chao.position = position if para == Vector2.ZERO or _bate_em_parede(position, onde) else onde
+	mundo.add_child(no_chao)
+	if Mapas.na_agua(mapa, no_chao.position):
+		no_chao.afundar()
+	arma.queue_free()
+	arma = null
+
+
+## Chamado pela arma quando a munição (ou o tempo) acaba: some e fica desarmado.
+func _arma_acabou(qual: Node) -> void:
+	if qual != arma:
+		return
+	arma.queue_free()
+	arma = null
+	_mostrar_texto("Vazia!", Color(0.8, 0.8, 0.8))
+
+
+func atordoado() -> bool:
+	return _tempo_atordoado > 0.0
+
+
+## Golpe ou língua de alguém. Fica tonto (passarinhos em cima da cabeça), é
+## empurrado e, se "derrubar", larga a arma. Já atordoado: não soma tempo, mas
+## ainda pode perder a arma. Logo depois de acordar fica imune por um tempo.
+func atordoar(segundos: float, empurrao: Vector2, derrubar: bool) -> bool:
+	if not vivo or _imune_atordoar > 0.0:
+		return false
+	if not atordoado():
+		_tempo_atordoado = segundos
+		soltar_lingua(RECARGA_SOLTAR)
+		_carga_invisivel = 0.0
+		if not invisivel:
+			modulate.a = 1.0
+		var passarinhos := EfeitoAtordoado.new()
+		passarinhos.alvo = self
+		mundo.add_child.call_deferred(passarinhos)
+		Controles.vibrar(controle, 0.45, 0.3, 0.2)
+	if empurrao != Vector2.ZERO:
+		_empurrao = empurrao
+	if derrubar:
+		_largar_arma(empurrao)
+	return true
+
+
+func _mostrar_texto(texto: String, cor_texto: Color) -> void:
+	var nome := EfeitoTexto.new()
+	nome.texto = texto
+	nome.cor = cor_texto
+	nome.position = position
+	mundo.add_child.call_deferred(nome)
 
 
 func _vibrar_acerto_golpe() -> void:
@@ -825,6 +943,7 @@ func _morrer(caiu_na_agua: bool) -> void:
 	soltar_lingua(RECARGA_LINGUA)
 	if _sendo_puxado():
 		puxado_por.soltar_lingua(RECARGA_LINGUA)
+	_largar_arma(Vector2.ZERO)  # a arma fica para quem sobrou (na água, afunda)
 	vivo = false
 	var efeito: Node2D
 	if caiu_na_agua:
@@ -855,7 +974,7 @@ func _draw() -> void:
 	var escala := Vector2.ONE * Desenho.ESCALA_JOGO
 	Desenho.desenhar(self, Transform2D(0.0, escala, 0.0, Vector2.ZERO), cor, direcao, _olhando_direita, _passo)
 	if lingua == "olho":
-		_desenhar_olho()
+		Desenho.desenhar_olho(self, _tempo_olho)
 	if _tempo_grudado > 0.0:
 		# Grude verde nos pés.
 		for x in [-8.0, 0.0, 9.0]:
@@ -870,46 +989,9 @@ func _draw() -> void:
 		draw_circle(Vector2(0, -42), 6.0, Linguas.CONTORNO)
 		draw_circle(Vector2(0, -42), 4.5, cor_upgrade)
 	if _mirando:
-		_desenhar_mira()
+		Desenho.desenhar_mira(self, direcao)
 	if _carga_invisivel > 0.0:
 		# Anel que vai se completando enquanto o botão de invisível é segurado.
 		var t := _carga_invisivel / TEMPO_PARA_SUMIR
 		draw_arc(Vector2.ZERO, 34.0, 0.0, TAU, 32, Color(0, 0, 0, 0.3), 5.0, true)
 		draw_arc(Vector2.ZERO, 34.0, -PI / 2.0, -PI / 2.0 + TAU * t, 32, Color.WHITE, 3.0, true)
-
-
-## Setinha de mira: um tracejado curto e uma ponta de seta na direção da mira.
-func _desenhar_mira() -> void:
-	var lado := direcao.orthogonal()
-	for i in 3:
-		var p := direcao * (30.0 + i * 9.0)
-		draw_circle(p, 3.2, Color(0, 0, 0, 0.35))
-		draw_circle(p, 2.2, Color(1, 1, 1, 0.8))
-	var ponta := direcao * 66.0
-	var base := direcao * 54.0
-	var seta := PackedVector2Array([ponta, base + lado * 7.0, base - lado * 7.0])
-	draw_colored_polygon(seta, Color(1, 1, 1, 0.9))
-	seta.append(ponta)
-	draw_polyline(seta, Color(0, 0, 0, 0.5), 2.0, true)
-
-
-## Poder "olho": um círculo tracejado mostra até onde ele enxerga, e quem estiver
-## invisível dentro dele aparece como um vulto tremido (para todo mundo ver,
-## inclusive quem está invisível: ele sabe que foi visto).
-func _desenhar_olho() -> void:
-	var raio: float = Linguas.TIPOS["olho"]["raio_olho"]
-	var cor_olho: Color = Linguas.TIPOS["olho"]["cor"]
-	var tracos := 24
-	for i in tracos:
-		var comeco := TAU * i / tracos + _tempo_olho * 0.3
-		draw_arc(Vector2.ZERO, raio, comeco, comeco + TAU / tracos * 0.5, 4, Color(cor_olho, 0.35), 2.0, true)
-	for outro in get_tree().get_nodes_in_group("camaleoes"):
-		if outro == self or not outro.vivo or not outro.invisivel or not _enxerga(outro):
-			continue
-		var onde := to_local(outro.position)
-		# Vulto: dois contornos que tremem, como ar quente.
-		for k in 2:
-			var tremida := Vector2(sin(_tempo_olho * 23.0 + k * 2.0), cos(_tempo_olho * 19.0 + k)) * 2.5
-			draw_set_transform(onde + tremida, 0.0, Vector2(1.0, 1.25))
-			draw_arc(Vector2.ZERO, RAIO + 2.0 + k * 3.0, 0.0, TAU, 20, Color(cor_olho, 0.55 - k * 0.2), 2.0, true)
-		draw_set_transform(Vector2.ZERO)
